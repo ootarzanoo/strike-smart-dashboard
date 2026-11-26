@@ -3,7 +3,46 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Strike Smart | Institutional Algorithmic Trading Suite</title>
+  <title>Strike Smart | Institutional Algorithmic Trading Suite (Nifty & Sensex)</title>
+  
+  <!-- SEO & Social Media Meta Tags -->
+  <meta name="description" content="Strike Smart - Autonomous 7-Strategy Algorithmic Trading Suite for Nifty & Sensex Futures and Options. Zero webhook latency, institutional risk management, and live Telegram alerts.">
+  <meta name="keywords" content="Strike Smart, algorithmic trading india, nifty algo trading, sensex options buying, trading bot india, SEBI compliant algo trading, angel one smartapi, dhan algo trading">
+  <meta name="author" content="Strike Smart Systems">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://ootarzanoo.github.io/strike-smart-dashboard/">
+
+  <!-- Open Graph / Facebook / WhatsApp / Telegram Preview -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://ootarzanoo.github.io/strike-smart-dashboard/">
+  <meta property="og:title" content="Strike Smart | Autonomous 7-Strategy Algorithmic Trading Suite">
+  <meta property="og:description" content="Institutional Index Futures Scalping, Options Buying, Delta-Neutral Straddles, and Expiry Zero-Hero Gamma Engine.">
+  <meta property="og:image" content="https://ootarzanoo.github.io/strike-smart-dashboard/live_thumbnail.png">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://ootarzanoo.github.io/strike-smart-dashboard/">
+  <meta name="twitter:title" content="Strike Smart | Autonomous Algorithmic Trading Suite">
+  <meta name="twitter:description" content="Autonomous 7-Strategy Trading Suite for Nifty & Sensex with Google Cloud 24x7 Execution.">
+  <meta name="twitter:image" content="https://ootarzanoo.github.io/strike-smart-dashboard/live_thumbnail.png">
+
+  <!-- JSON-LD Structured Data Schema -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Strike Smart Trading Suite",
+    "operatingSystem": "Cloud / Web",
+    "applicationCategory": "FinanceApplication",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "INR"
+    },
+    "description": "Institutional 7-Strategy algorithmic trading engine for Indian indices."
+  }
+  </script>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -70,13 +109,32 @@
         </a>
       </nav>
 
-      <div class="flex items-center gap-3">
+      <!-- Logged-Out Nav Buttons -->
+      <div id="nav-guest-actions" class="flex items-center gap-3">
         <button onclick="openLoginModal()" class="px-5 py-2.5 rounded-xl border border-slate-700 hover:border-slate-500 text-sm font-semibold text-slate-200 hover:text-white transition-all">
           Sign In
         </button>
         <button onclick="openLoginModal()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-sm font-bold text-white shadow-lg shadow-brand-500/25 active:scale-95 transition-all flex items-center gap-2">
           <span>Launch App</span>
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+        </button>
+      </div>
+
+      <!-- Logged-In Nav Buttons (with high-visibility Logout) -->
+      <div id="nav-user-actions" class="hidden flex items-center gap-3">
+        <a href="dashboard.html" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800/90 border border-slate-700 hover:border-brand-500 transition-all">
+          <div class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center text-xs">👤</div>
+          <div class="text-left">
+            <div id="nav-user-name" class="text-xs font-bold text-white leading-tight">Trader</div>
+            <div class="text-[9px] text-emerald-400 font-mono">Google Verified</div>
+          </div>
+        </a>
+        <a href="dashboard.html" class="px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-xs font-bold text-white shadow-md transition-all flex items-center gap-1.5">
+          <span>Go to Dashboard &rarr;</span>
+        </a>
+        <button onclick="handleLogout()" class="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all shadow-md flex items-center gap-1.5 cursor-pointer active:scale-95 border border-rose-500" title="Sign Out of Strike Smart">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+          <span>Logout</span>
         </button>
       </div>
     </div>
@@ -379,13 +437,27 @@
       document.getElementById('login-modal').classList.add('hidden');
     }
 
-    // Auto-check if already logged in
+    // Auto-check if already logged in and update Navbar
     window.addEventListener('DOMContentLoaded', () => {
-      const user = checkAuthSession ? checkAuthSession() : null;
+      const user = (typeof checkAuthSession === 'function') ? checkAuthSession() : null;
+      const guestNav = document.getElementById('nav-guest-actions');
+      const userNav = document.getElementById('nav-user-actions');
+      const navName = document.getElementById('nav-user-name');
+      
       if (user && user.name) {
         console.log('[STRIKE_SMART] Logged-in session detected:', user.name);
+        if (guestNav) guestNav.classList.add('hidden');
+        if (userNav) userNav.classList.remove('hidden');
+        if (navName) navName.innerText = user.name;
       }
     });
+
+    function handleLogout() {
+      if (confirm('Are you sure you want to sign out of Strike Smart?')) {
+        localStorage.removeItem('strike_smart_user');
+        window.location.reload();
+      }
+    }
   </script>
 </body>
 </html>
