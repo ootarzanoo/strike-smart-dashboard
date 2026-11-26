@@ -3,2774 +3,359 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AlgoDeck - User Trading Dashboard</title>
-  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <title>Strike Smart | Institutional Algorithmic Trading Suite</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace']
+          },
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              500: '#3b5bfd',
+              600: '#2543e0',
+              700: '#1d35b5'
+            }
+          }
+        }
+      }
+    }
+  </script>
   <style>
-    body {
-      background-color: #EBF0F6;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      color: #1F2937;
+    body { background-color: #090d16; color: #f1f5f9; }
+    .glass-nav { background: rgba(11, 15, 25, 0.85); backdrop-filter: blur(16px); }
+    .hero-glow {
+      background: radial-gradient(circle at 50% 20%, rgba(59, 91, 253, 0.22) 0%, rgba(16, 185, 129, 0.08) 45%, transparent 70%);
     }
-    .card-shadow {
-      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.04), 0 8px 10px -6px rgba(15, 23, 42, 0.03);
+    .card-glow:hover {
+      box-shadow: 0 10px 30px -10px rgba(59, 91, 253, 0.35);
+      border-color: rgba(59, 91, 253, 0.5);
     }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-    .modal-backdrop {
-      background-color: rgba(15, 23, 42, 0.65);
-      backdrop-filter: blur(8px);
-    }
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
-    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
   </style>
 </head>
-<body class="p-1 sm:p-4 lg:p-6 bg-[#EBF0F6] min-h-screen lg:h-screen lg:overflow-hidden flex items-start lg:items-center justify-center">
+<body class="min-h-screen font-sans selection:bg-brand-500 selection:text-white flex flex-col justify-between hero-glow">
 
-  <!-- Mobile Drawer Backdrop -->
-  <div id="sidebar-backdrop" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-40 hidden transition-opacity lg:hidden" onclick="toggleMobileSidebar(false)"></div>
-
-  <!-- ===================================================================== -->
-  <!-- MODAL 1: USER AUTH (GOOGLE ONE-TAP & MOBILE OTP)                      -->
-  <!-- ===================================================================== -->
-  <div id="auth-modal" class="fixed inset-0 z-50 modal-backdrop hidden flex items-center justify-center p-4" onclick="handleAuthBackdropClick(event)">
-    <div class="bg-white rounded-[32px] max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-100 relative space-y-6" onclick="event.stopPropagation()">
-      
-      <button onclick="closeAuthModal()" class="absolute top-6 right-6 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors text-sm font-bold">
-        ✕
-      </button>
-
-      <!-- Logo & Header -->
-      <div class="text-center space-y-2">
-        <div class="w-12 h-12 rounded-2xl bg-[#3b5bfd] text-white font-black text-xl flex items-center justify-center mx-auto shadow-lg shadow-blue-500/30">
-          ⚡
-        </div>
-        <h3 class="text-xl font-black text-slate-900 tracking-tight">Login to AlgoDeck</h3>
-        <p class="text-xs text-slate-400">
-          Sign in to access your dashboard, algorithms, and paper trading
-        </p>
-      </div>
-
-      <!-- Auth Tabs: Google vs Mobile OTP -->
-      <div class="flex p-1 bg-slate-100 rounded-2xl text-xs font-bold">
-        <button onclick="setAuthMethod('google')" id="auth-tab-google" class="flex-1 py-2 rounded-xl bg-white text-slate-900 shadow">
-          Google One-Tap
-        </button>
-        <button onclick="setAuthMethod('mobile')" id="auth-tab-mobile" class="flex-1 py-2 rounded-xl text-slate-500 hover:text-slate-900">
-          📱 Mobile OTP
-        </button>
-      </div>
-
-      <!-- GOOGLE ONE-TAP SECTION -->
-      <div id="auth-google-view" class="space-y-4">
-        <button onclick="loginWithGoogle()" class="w-full py-3 px-4 bg-white hover:bg-slate-50 border border-slate-300 rounded-2xl text-xs font-bold text-slate-700 flex items-center justify-center gap-3 transition-all shadow-sm hover:shadow active:scale-95">
-          <svg class="w-4 h-4" viewBox="0 0 24 24">
-            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-          </svg>
-          <span id="google-btn-text">Continue with Google (1-Click)</span>
-        </button>
-
-        <div class="p-3.5 bg-blue-50/70 border border-blue-100 rounded-2xl text-[11px] text-blue-800 leading-relaxed">
-          ✨ <strong>फोन की तुरंत आवश्यकता नहीं:</strong> आप अभी Google से सीधे लॉगिन करके अपना डैशबोर्ड और वर्चुअल ₹2 लाख से <strong>Paper Trading</strong> तुरंत शुरू कर सकते हैं।
-        </div>
-      </div>
-
-      <!-- MOBILE OTP SECTION -->
-      <div id="auth-mobile-view" class="hidden space-y-4">
-        <div id="mobile-input-step" class="space-y-3">
-          <div>
-            <label class="block text-[11px] font-bold text-slate-700 mb-1">Mobile Number</label>
-            <div class="flex items-center gap-2">
-              <span class="px-3 py-2.5 rounded-xl border border-slate-300 bg-slate-50 text-xs font-mono font-bold text-slate-600">
-                +91
-              </span>
-              <input type="tel" id="mobile-number-input" maxlength="10" placeholder="9876543210" class="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-mono focus:ring-2 focus:ring-[#3b5bfd] focus:outline-none bg-white">
-            </div>
-          </div>
-          <button onclick="sendMobileOtp()" class="w-full py-2.5 bg-[#3b5bfd] hover:bg-blue-600 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20 active:scale-95">
-            Send 6-Digit OTP
-          </button>
-        </div>
-
-        <div id="otp-input-step" class="hidden space-y-3">
-          <div class="flex items-center justify-between text-xs">
-            <span class="text-slate-500">OTP sent to your number</span>
-            <button onclick="resendOtp()" class="text-[#3b5bfd] font-bold hover:underline text-[11px]">Resend</button>
-          </div>
-          <div class="flex justify-between gap-1.5">
-            <input type="text" maxlength="1" value="1" class="w-10 h-11 text-center rounded-xl border border-slate-300 font-mono text-base font-bold bg-white">
-            <input type="text" maxlength="1" value="2" class="w-10 h-11 text-center rounded-xl border border-slate-300 font-mono text-base font-bold bg-white">
-            <input type="text" maxlength="1" value="3" class="w-10 h-11 text-center rounded-xl border border-slate-300 font-mono text-base font-bold bg-white">
-            <input type="text" maxlength="1" value="4" class="w-10 h-11 text-center rounded-xl border border-slate-300 font-mono text-base font-bold bg-white">
-            <input type="text" maxlength="1" value="5" class="w-10 h-11 text-center rounded-xl border border-slate-300 font-mono text-base font-bold bg-white">
-            <input type="text" maxlength="1" value="6" class="w-10 h-11 text-center rounded-xl border border-slate-300 font-mono text-base font-bold bg-white">
-          </div>
-          <button onclick="verifyMobileOtp()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/20">
-            Verify & Continue
-          </button>
-        </div>
-      </div>
-
-      <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
-        <span>🔒 256-Bit SSL Encrypted</span>
-        <span>SEBI Compliant Data Privacy</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===================================================================== -->
-  <!-- MODAL 3: ACCURATE BROKERAGE & TAXES BREAKDOWN CALCULATOR (MULTI-LOT)   -->
-  <!-- ===================================================================== -->
-  <div id="brokerage-modal" class="fixed inset-0 z-50 modal-backdrop hidden flex items-center justify-center p-4" onclick="handleBrokerageBackdropClick(event)">
-    <div class="bg-white rounded-[32px] max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 relative space-y-6 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
-      
-      <!-- Close Button -->
-      <button onclick="closeBrokerageModal()" class="absolute top-6 right-6 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors text-sm font-bold">
-        ✕
-      </button>
-
-      <!-- Header -->
+  <!-- NAVBAR -->
+  <header class="sticky top-0 z-40 glass-nav border-b border-slate-800/80">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <div class="w-12 h-12 rounded-2xl bg-amber-500 text-white font-black text-xl flex items-center justify-center shadow-lg shadow-amber-500/30">
-          🧾
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center shadow-lg shadow-brand-500/30">
+          <span class="text-white font-black text-xl tracking-tighter">⚡</span>
         </div>
         <div>
-          <h3 class="text-xl font-black text-slate-900 tracking-tight">Brokerage & Statutory Charges Engine</h3>
-          <p class="text-xs text-slate-400">Accurate SEBI, NSE F&O & Central GST Calculation for Single & Multi-Lot Orders</p>
+          <span class="text-xl font-extrabold tracking-tight text-white">STRIKE<span class="text-brand-500">SMART</span></span>
+          <span class="hidden sm:inline-block ml-2 text-[10px] uppercase font-mono font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">7 Algos Live</span>
         </div>
       </div>
 
-      <!-- Segment Rates Comparison Box -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-        <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1">
-          <span class="font-bold text-slate-800 block text-xs">Option Selling (F&O)</span>
-          <p class="text-[10px] text-slate-500">Flat ₹20/order leg + 0.1% STT on premium + 0.03503% Exchange fee + 18% GST.</p>
-        </div>
-        <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1">
-          <span class="font-bold text-slate-800 block text-xs">Futures (F&O)</span>
-          <p class="text-[10px] text-slate-500">Flat ₹20/order leg + 0.02% STT on turnover + 0.00173% Exchange fee + 18% GST.</p>
-        </div>
-        <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1">
-          <span class="font-bold text-slate-800 block text-xs">Equity Cash</span>
-          <p class="text-[10px] text-slate-500">Flat ₹20 or 0.03% (lower) + 0.025% STT on sell + 0.00297% Exchange fee + 18% GST.</p>
-        </div>
-      </div>
-
-      <!-- Interactive Multi-Lot Sizing Calculator -->
-      <div class="p-5 rounded-2xl bg-blue-50/50 border border-blue-200/80 space-y-4">
-        <div class="flex items-center justify-between">
-          <h4 class="font-bold text-slate-900 text-xs uppercase tracking-wider">Multi-Lot Live Calculator</h4>
-          <span class="text-[10px] font-bold text-blue-600 bg-white px-2 py-0.5 rounded-md border border-blue-200">Interactive</span>
-        </div>
-
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-          <div>
-            <label class="block text-[10px] font-bold text-slate-500 mb-1">Segment & Official NSE Lot</label>
-            <select id="calc-segment" onchange="recalcChargesModal()" class="w-full p-2 bg-white rounded-xl border border-slate-300 font-bold text-xs">
-              <option value="BANKNIFTY_OPT">BankNifty Options (15 Qty/Lot - NSE)</option>
-              <option value="NIFTY_OPT">Nifty 50 Options (25 Qty/Lot - NSE)</option>
-              <option value="BANKNIFTY_FUT">BankNifty Futures (15 Qty/Lot - NSE)</option>
-              <option value="NIFTY_FUT">Nifty 50 Futures (25 Qty/Lot - NSE)</option>
-              <option value="FINNIFTY_OPT">FinNifty Options (25 Qty/Lot - NSE)</option>
-              <option value="CASH">Equity Cash (100 Shares/Unit)</option>
-              <option value="MCX">MCX Crude Oil (100 bbl/Lot)</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-[10px] font-bold text-slate-500 mb-1">Lot Multiplier</label>
-            <div class="flex items-center gap-1">
-              <button onclick="adjustCalcLots(-1)" class="w-7 h-8 bg-white border border-slate-300 rounded-lg font-black text-slate-700 hover:bg-slate-50 active:scale-95 transition-transform">-</button>
-              <input type="number" id="calc-lots" value="1" min="1" max="50" onchange="recalcChargesModal()" class="w-12 h-8 text-center bg-white border border-slate-300 rounded-lg font-bold font-mono text-xs">
-              <button onclick="adjustCalcLots(1)" class="w-7 h-8 bg-white border border-slate-300 rounded-lg font-black text-slate-700 hover:bg-slate-50 active:scale-95 transition-transform">+</button>
-            </div>
-            <!-- Quick Lot Presets -->
-            <div class="flex gap-1 mt-1">
-              <button onclick="setCalcLotsPreset(1)" class="text-[9px] font-bold bg-white px-1.5 py-0.5 rounded border border-slate-200 hover:bg-blue-50">1x</button>
-              <button onclick="setCalcLotsPreset(2)" class="text-[9px] font-bold bg-white px-1.5 py-0.5 rounded border border-slate-200 hover:bg-blue-50">2x</button>
-              <button onclick="setCalcLotsPreset(5)" class="text-[9px] font-bold bg-white px-1.5 py-0.5 rounded border border-slate-200 hover:bg-blue-50">5x</button>
-              <button onclick="setCalcLotsPreset(10)" class="text-[9px] font-bold bg-white px-1.5 py-0.5 rounded border border-slate-200 hover:bg-blue-50">10x</button>
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-[10px] font-bold text-slate-500 mb-1">Buy Price (₹)</label>
-            <input type="number" id="calc-buy" value="120" onchange="recalcChargesModal()" class="w-full p-2 bg-white rounded-xl border border-slate-300 font-bold font-mono text-xs">
-          </div>
-
-          <div>
-            <label class="block text-[10px] font-bold text-slate-500 mb-1">Sell Price (₹)</label>
-            <input type="number" id="calc-sell" value="160" onchange="recalcChargesModal()" class="w-full p-2 bg-white rounded-xl border border-slate-300 font-bold font-mono text-xs">
-          </div>
-        </div>
-
-        <!-- Calculated Live Deductions Table -->
-        <div class="bg-white rounded-xl p-4 border border-blue-100 font-mono text-xs space-y-2">
-          <div class="flex items-center justify-between text-slate-600">
-            <span>Total Qty Traded:</span>
-            <span id="res-qty" class="font-bold text-slate-900">15 Qty (1 Lot)</span>
-          </div>
-          <div class="flex items-center justify-between text-slate-600">
-            <span>Total Turnover (Buy + Sell):</span>
-            <span id="res-turnover" class="font-bold text-slate-800">₹4,200.00</span>
-          </div>
-          <div class="flex items-center justify-between text-slate-600">
-            <span>Gross Trading Profit:</span>
-            <span id="res-gross" class="font-bold text-emerald-600">+₹600.00</span>
-          </div>
-          <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-slate-600">
-            <span>Flat Brokerage (₹20 x 2 orders):</span>
-            <span id="res-brokerage" class="font-bold text-red-500 font-mono">-₹40.00</span>
-          </div>
-          <div class="flex items-center justify-between text-slate-600">
-            <span>STT / CTT:</span>
-            <span id="res-stt" class="font-bold text-red-500 font-mono">-₹2.40</span>
-          </div>
-          <div class="flex items-center justify-between text-slate-600">
-            <span>Exchange Turnover Charges:</span>
-            <span id="res-exchange" class="font-bold text-red-500 font-mono">-₹1.47</span>
-          </div>
-          <div class="flex items-center justify-between text-slate-600">
-            <span>GST (18% on fees):</span>
-            <span id="res-gst" class="font-bold text-red-500 font-mono">-₹7.46</span>
-          </div>
-          <div class="flex items-center justify-between text-slate-600">
-            <span>SEBI Charges + Stamp Duty:</span>
-            <span id="res-stamp" class="font-bold text-red-500 font-mono">-₹0.11</span>
-          </div>
-          <div class="pt-2 border-t border-slate-200 flex items-center justify-between font-bold text-sm">
-            <span class="text-slate-800">Total Statutory Deductions:</span>
-            <span id="res-total-deductions" class="text-red-500 font-black font-mono">-₹51.44</span>
-          </div>
-          <div class="pt-1 flex items-center justify-between font-bold text-sm">
-            <span class="text-emerald-700">Net Realized Profit:</span>
-            <span id="res-net-profit" class="text-emerald-600 font-black text-base">+₹548.56</span>
-          </div>
-          <div class="pt-1 text-[11px] text-slate-400 font-sans flex items-center justify-between">
-            <span>Break-Even Price Movement:</span>
-            <span id="res-breakeven" class="font-bold text-slate-700 font-mono">+3.43 pts</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-        <span class="text-slate-400">© 2026 AlgoDeck Pricing & Regulatory Engine</span>
-        <button onclick="closeBrokerageModal()" class="px-5 py-2 bg-[#3b5bfd] hover:bg-blue-600 text-white font-bold rounded-xl shadow">
-          Close Calculator
-        </button>
-      </div>
-
-    </div>
-  </div>
-
-
-
-  <!-- ===================================================================== -->
-  <!-- MODAL 2: DHAN BROKER CONNECT WIZARD                                   -->
-  <!-- ===================================================================== -->
-  <div id="connect-modal" class="fixed inset-0 z-50 modal-backdrop hidden flex items-center justify-center p-4" onclick="handleConnectBackdropClick(event)">
-    <div class="bg-white rounded-[32px] max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-100 relative space-y-6" onclick="event.stopPropagation()">
-      
-      <button onclick="closeConnectModal()" class="absolute top-6 right-6 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors">
-        ✕
-      </button>
+      <nav class="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-300">
+        <a href="#algos" class="hover:text-white transition-colors">7 Strategies</a>
+        <a href="#features" class="hover:text-white transition-colors">Architecture</a>
+        <a href="#stats" class="hover:text-white transition-colors">Performance</a>
+        <a href="https://t.me/StrikeSmart" target="_blank" class="hover:text-white transition-colors flex items-center gap-1.5 text-sky-400">
+          <span>Telegram Alerts</span>
+          <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.75-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .37z"/></svg>
+        </a>
+      </nav>
 
       <div class="flex items-center gap-3">
-        <div class="w-12 h-12 rounded-2xl bg-emerald-600 text-white font-black text-sm flex items-center justify-center shadow-lg shadow-emerald-600/30">
-          DHAN
-        </div>
-        <div>
-          <h3 class="text-xl font-black text-slate-900 tracking-tight">Connect Live Dhan Account</h3>
-          <p class="text-xs text-slate-400">100% Free Official API • Instant 30-Sec Setup</p>
-        </div>
-      </div>
-
-      <!-- Step Progress Bar -->
-      <div class="flex items-center justify-between text-[11px] font-bold text-slate-400 px-2">
-        <span class="text-[#3b5bfd] flex items-center gap-1.5">
-          <span class="w-5 h-5 rounded-full bg-blue-100 text-[#3b5bfd] flex items-center justify-center text-[10px]">1</span> Login
-        </span>
-        <span class="w-12 h-0.5 bg-slate-200" id="prog-line-1"></span>
-        <span id="step-label-2" class="flex items-center gap-1.5">
-          <span class="w-5 h-5 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-[10px]" id="step-badge-2">2</span> Verify Funds
-        </span>
-        <span class="w-12 h-0.5 bg-slate-200" id="prog-line-2"></span>
-        <span id="step-label-3" class="flex items-center gap-1.5">
-          <span class="w-5 h-5 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-[10px]" id="step-badge-3">3</span> Live
-        </span>
-      </div>
-
-      <!-- STEP 1: CHOOSE SIMPLE CONNECTION METHOD -->
-      <div id="step-1-content" class="space-y-4">
-        <div class="flex p-1 bg-slate-100 rounded-2xl text-xs font-bold">
-          <button onclick="setConnectMethod('qr')" id="btn-method-qr" class="flex-1 py-2 rounded-xl bg-white text-slate-900 shadow">
-            📱 1-Click Dhan App Scan
-          </button>
-          <button onclick="setConnectMethod('token')" id="btn-method-token" class="flex-1 py-2 rounded-xl text-slate-500 hover:text-slate-900">
-            🔑 Fast Token Paste
-          </button>
-        </div>
-
-        <!-- Method A: QR Scan with Dhan App -->
-        <div id="method-qr" class="p-6 bg-slate-50 rounded-2xl border border-slate-200/80 text-center space-y-3">
-          <div class="w-36 h-36 mx-auto bg-white p-3 rounded-2xl shadow-inner border border-slate-200 flex flex-col items-center justify-center relative group cursor-pointer" onclick="simulateSuccessfulConnect()">
-            <div class="grid grid-cols-4 gap-1.5 w-full h-full p-1 opacity-80">
-              <div class="bg-slate-800 rounded"></div><div class="bg-slate-800 rounded"></div><div class="bg-slate-300 rounded"></div><div class="bg-slate-800 rounded"></div>
-              <div class="bg-slate-800 rounded"></div><div class="bg-emerald-600 rounded"></div><div class="bg-slate-800 rounded"></div><div class="bg-slate-300 rounded"></div>
-              <div class="bg-slate-300 rounded"></div><div class="bg-slate-800 rounded"></div><div class="bg-slate-800 rounded"></div><div class="bg-emerald-600 rounded"></div>
-              <div class="bg-slate-800 rounded"></div><div class="bg-slate-300 rounded"></div><div class="bg-emerald-600 rounded"></div><div class="bg-slate-800 rounded"></div>
-            </div>
-            <span class="absolute inset-0 bg-[#3b5bfd]/90 text-white text-[11px] font-bold rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              Click to Auto-Scan
-            </span>
-          </div>
-          <div>
-            <p class="text-xs font-bold text-slate-800">Scan via Dhan App</p>
-            <p class="text-[11px] text-slate-400 mt-0.5">Open Dhan Mobile App → Profile → Scan to Login</p>
-          </div>
-          <button onclick="simulateSuccessfulConnect()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/20">
-            ⚡ Connect via Dhan App (1-Click)
-          </button>
-        </div>
-
-        <!-- Method B: Token Paste -->
-        <div id="method-token" class="hidden space-y-3 p-4 bg-slate-50 rounded-2xl border border-slate-200/80">
-          <div>
-            <label class="block text-[11px] font-bold text-slate-700 mb-1">Dhan Client ID</label>
-            <input type="text" id="input-client-id" value="100088921" placeholder="e.g. 100088921" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-mono focus:ring-2 focus:ring-[#3b5bfd] focus:outline-none bg-white">
-          </div>
-          <div>
-            <div class="flex items-center justify-between mb-1">
-              <label class="text-[11px] font-bold text-slate-700">Dhan Access Token</label>
-              <a href="https://web.dhan.co" target="_blank" class="text-[10px] font-bold text-[#3b5bfd] hover:underline flex items-center gap-0.5">
-                <span>Generate Free on Dhan</span> ↗
-              </a>
-            </div>
-            <input type="password" id="input-token" value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." placeholder="Paste token here" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-mono focus:ring-2 focus:ring-[#3b5bfd] focus:outline-none bg-white">
-          </div>
-          <button onclick="simulateSuccessfulConnect()" class="w-full py-2.5 bg-[#3b5bfd] hover:bg-blue-600 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20">
-            Verify & Fetch Capital
-          </button>
-        </div>
-      </div>
-
-      <!-- STEP 2: VERIFIED FUNDS PREVIEW -->
-      <div id="step-2-content" class="hidden space-y-4">
-        <div class="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3">
-          <div class="w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-base">
-            ✓
-          </div>
-          <div>
-            <h4 class="text-xs font-black text-emerald-900">Dhan Account Successfully Linked!</h4>
-            <p class="text-[11px] text-emerald-700">Client ID: <strong>DH882941</strong> • Deepak Sharma</p>
-          </div>
-        </div>
-
-        <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Live Funds Collected at Connection</span>
-          <div class="flex items-baseline justify-between">
-            <div>
-              <span class="text-2xl font-black text-slate-900 font-mono">₹2,00,000</span>
-              <span class="text-xs text-slate-500 ml-1">Live Balance</span>
-            </div>
-            <span class="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">Sufficient</span>
-          </div>
-
-          <div class="pt-2 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-600">
-            <span>Buying Capital (Cash/ORB):</span>
-            <span class="font-bold text-slate-800">₹50,000 Allocated</span>
-          </div>
-          <div class="flex items-center justify-between text-[11px] text-slate-600">
-            <span>Selling Margin (9:20 Straddle):</span>
-            <span class="font-bold text-slate-800">₹1,50,000 Allocated</span>
-          </div>
-        </div>
-
-        <button onclick="finishConnect()" class="w-full py-3 bg-[#3b5bfd] hover:bg-blue-600 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2">
-          <span>🚀 Start Automated Trading with Dhan</span>
+        <button onclick="openLoginModal()" class="px-5 py-2.5 rounded-xl border border-slate-700 hover:border-slate-500 text-sm font-semibold text-slate-200 hover:text-white transition-all">
+          Sign In
+        </button>
+        <button onclick="openLoginModal()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-sm font-bold text-white shadow-lg shadow-brand-500/25 active:scale-95 transition-all flex items-center gap-2">
+          <span>Launch App</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
         </button>
       </div>
-
     </div>
-  </div>
+  </header>
 
+  <!-- HERO SECTION -->
+  <section class="relative pt-16 pb-20 md:pt-24 md:pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-800/80 border border-slate-700/80 text-xs font-mono font-semibold text-emerald-400 mb-8 shadow-inner">
+      <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+      <span>ZERODHA &bull; DHAN &bull; ANGEL ONE SMARTAPI CONNECTED</span>
+    </div>
 
+    <h1 class="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white max-w-5xl mx-auto leading-tight sm:leading-tight">
+      Autonomous <span class="bg-gradient-to-r from-brand-500 via-blue-400 to-emerald-400 bg-clip-text text-transparent">7-Strategy Suite</span> for Nifty & Sensex
+    </h1>
 
-  <!-- ===================================================================== -->
-  <!-- MAIN APP CONTAINER                                                    -->
-  <!-- ===================================================================== -->
-  <div class="w-full max-w-7xl min-h-screen lg:min-h-0 lg:h-[94vh] bg-[#F6F8FB] rounded-2xl sm:rounded-[36px] p-2.5 sm:p-6 shadow-2xl border border-white/80 flex flex-col lg:flex-row gap-4 lg:gap-6 lg:overflow-hidden">
-    
-    <!-- LEFT SIDEBAR (MOBILE DRAWER ON SMALL SCREENS, PINNED STABLE ON DESKTOP) -->
-    <aside id="main-sidebar" class="fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-white p-5 flex flex-col gap-4 card-shadow border-r border-slate-200/80 transform -translate-x-full transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:w-64 lg:h-full lg:flex-shrink-0 lg:border-r-0 lg:border lg:border-slate-100/80 lg:rounded-[28px] lg:overflow-y-auto no-scrollbar">
-      <div class="space-y-5">
-        
-        <!-- Logo & Mobile Close Button -->
-        <div class="flex items-center justify-between px-1">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-2xl bg-[#3b5bfd] flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-500/30">
-              ⚡
-            </div>
-            <div>
-              <span class="text-lg font-black text-slate-900 tracking-tight block leading-tight">AlgoDeck</span>
-              <span class="text-[10px] font-bold text-blue-600 tracking-wider uppercase">Quant Systems</span>
-            </div>
-          </div>
-          <button onclick="toggleMobileSidebar(false)" class="lg:hidden w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center text-sm font-bold active:scale-95 transition-all" aria-label="Close Sidebar">
-            ✕
-          </button>
-        </div>
+    <p class="mt-6 text-lg sm:text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed">
+      Execute institutional index futures scalping, options buying, delta-neutral straddles, and expiry zero-hero trades with zero webhook latency and mathematical risk control.
+    </p>
 
-        <!-- Navigation Menu -->
-        <div class="space-y-1">
-          <span class="text-[10px] font-black text-slate-400 tracking-widest px-3 uppercase">Navigation</span>
-          <nav class="space-y-1 mt-2">
-            <button onclick="switchTab('tab-overview', this)" class="nav-btn w-full text-left bg-[#3b5bfd] text-white shadow-lg shadow-blue-500/30 flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition-all">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-              <span>Dashboard</span>
-            </button>
+    <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+      <button onclick="openLoginModal()" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-brand-500 hover:bg-brand-600 text-white font-bold text-base shadow-xl shadow-brand-500/30 hover:shadow-brand-500/50 active:scale-95 transition-all flex items-center justify-center gap-3">
+        <span>Open Trading Dashboard</span>
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+      </button>
 
-            <button onclick="switchTab('tab-active-algos', this)" class="nav-btn w-full text-left text-slate-500 hover:text-slate-800 hover:bg-slate-50 flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold transition-all">
-              <div class="flex items-center gap-3">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                <span>Active Algos</span>
-              </div>
-              <span id="active-badge" class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">2 Live</span>
-            </button>
+      <button onclick="openLoginModal('demo')" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-slate-200 hover:text-white font-bold text-base transition-all flex items-center justify-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+        <span>Instant 1-Click Guest Access</span>
+      </button>
+    </div>
 
-            <button onclick="switchTab('tab-my-strategies', this)" class="nav-btn w-full text-left text-slate-500 hover:text-slate-800 hover:bg-slate-50 flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition-all">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-              <span>My Strategies</span>
-            </button>
+    <!-- STATS BAR -->
+    <div id="stats" class="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-5xl mx-auto text-left">
+      <div class="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm">
+        <div class="text-xs uppercase font-mono text-slate-400 font-bold">Simulated Capital PnL</div>
+        <div class="mt-2 text-2xl sm:text-3xl font-extrabold text-emerald-400 font-mono">+₹2,48,650</div>
+        <div class="mt-1 text-[11px] text-slate-500">+24.3% Net In-Hand Gain</div>
+      </div>
+      <div class="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm">
+        <div class="text-xs uppercase font-mono text-slate-400 font-bold">Strategy Win Rate</div>
+        <div class="mt-2 text-2xl sm:text-3xl font-extrabold text-white font-mono">71.4%</div>
+        <div class="mt-1 text-[11px] text-slate-500">Across 12-Month Audits</div>
+      </div>
+      <div class="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm">
+        <div class="text-xs uppercase font-mono text-slate-400 font-bold">Active Algorithms</div>
+        <div class="mt-2 text-2xl sm:text-3xl font-extrabold text-brand-500 font-mono">7 Algos</div>
+        <div class="mt-1 text-[11px] text-slate-500">Futures, CE, PE & Expiry</div>
+      </div>
+      <div class="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm">
+        <div class="text-xs uppercase font-mono text-slate-400 font-bold">Execution Latency</div>
+        <div class="mt-2 text-2xl sm:text-3xl font-extrabold text-sky-400 font-mono">&lt; 50 ms</div>
+        <div class="mt-1 text-[11px] text-slate-500">Angel One & Dhan Sync</div>
+      </div>
+    </div>
+  </section>
 
-            <!-- Dedicated Paper Trading Sandbox Engine Tab (User Requested) -->
-            <button onclick="switchTab('tab-sandbox-engine', this)" class="nav-btn w-full text-left text-slate-500 hover:text-slate-800 hover:bg-slate-50 flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold transition-all">
-              <div class="flex items-center gap-3">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <span>Sandbox Engine</span>
-              </div>
-              <span class="text-[10px] bg-blue-50 text-[#3b5bfd] border border-blue-200 px-2 py-0.5 rounded-full font-bold">Demo</span>
-            </button>
+  <!-- 7 STRATEGIES SHOWCASE -->
+  <section id="algos" class="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-800/80">
+    <div class="text-center max-w-3xl mx-auto mb-16">
+      <span class="text-xs uppercase font-mono font-bold tracking-widest text-brand-500">Proprietary Architecture</span>
+      <h2 class="text-3xl sm:text-4xl font-extrabold text-white mt-2">The Complete 7-Algo Suite</h2>
+      <p class="text-slate-400 mt-3 text-sm sm:text-base">Diversified multi-asset strategies covering trend momentum, intraday scalping, options volatility, and expiry hero moves.</p>
+    </div>
 
-            <button onclick="switchTab('tab-all-strategies', this)" class="nav-btn w-full text-left text-slate-500 hover:text-slate-800 hover:bg-slate-50 flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold transition-all">
-              <div class="flex items-center gap-3">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-                <span>All Strategies (7)</span>
-              </div>
-            </button>
-
-            <button onclick="switchTab('tab-trade-ledger', this)" class="nav-btn w-full text-left text-slate-500 hover:text-slate-800 hover:bg-slate-50 flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition-all">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-              <span>Trade Ledger</span>
-            </button>
-          </nav>
-        </div>
-
-        <!-- Broker Status Snapshot -->
-        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-2.5">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- 01 Nifty Velocity Pro -->
+      <div class="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 card-glow transition-all flex flex-col justify-between">
+        <div>
           <div class="flex items-center justify-between">
-            <span class="text-[10px] font-bold text-slate-400 uppercase">Broker Status</span>
-            <span id="sidebar-broker-status-badge" class="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
-              SIMULATED
-            </span>
+            <span class="text-[10px] uppercase font-mono font-bold px-2.5 py-1 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/20">NSE Futures</span>
+            <span class="text-xs font-mono font-bold text-emerald-400">Win: 68.9%</span>
           </div>
-          <div class="flex items-center gap-2.5">
-            <div id="sidebar-broker-icon" class="w-8 h-8 rounded-xl bg-blue-600 text-white font-black text-xs flex items-center justify-center shadow">
-              PAPER
-            </div>
-            <div>
-              <div id="sidebar-broker-name" class="text-xs font-black text-slate-800">Paper Trading Sim</div>
-              <div id="sidebar-broker-id" class="text-[10px] text-slate-400 font-mono">Sandbox Mode</div>
-            </div>
-          </div>
-          <div class="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px]">
-            <span class="text-slate-500" id="sidebar-fund-label">Virtual Funds:</span>
-            <span class="font-bold text-slate-800 font-mono" id="sidebar-fund-value">₹2,00,000</span>
-          </div>
-          <button onclick="openConnectModal()" id="sidebar-switch-broker-btn" class="w-full py-1.5 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-[#3b5bfd] text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 shadow-xs">
-            <span>🔗</span>
-            <span>Link Live Broker</span>
-          </button>
+          <h3 class="text-lg font-bold text-white mt-4">1. Nifty Velocity Pro</h3>
+          <p class="text-xs text-slate-400 mt-2">5-Minute Futures Scalper with VWAP breakout, EMA 9/21 cross, and 3-stage trailing stop-loss.</p>
         </div>
-
-        <!-- Institutional RMS 3% Shield Card (DealDeck Soft-Light Theme) -->
-        <div class="p-4 rounded-2xl bg-white border border-emerald-100 shadow-sm space-y-2.5">
-          <div class="flex items-center justify-between gap-2">
-            <div class="flex items-center gap-2 min-w-0">
-              <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm font-bold flex-shrink-0 border border-emerald-100/80">
-                🛡️
-              </div>
-              <div class="min-w-0">
-                <div class="text-xs font-black text-slate-900 truncate">Institutional RMS</div>
-                <div class="text-[10px] font-bold text-emerald-600 truncate">3% Max Loss Auto-Shield</div>
-              </div>
-            </div>
-            <span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 whitespace-nowrap flex-shrink-0 border border-emerald-200/60">
-              ACTIVE
-            </span>
-          </div>
-          <div class="space-y-1 pt-1.5 border-t border-slate-100">
-            <div class="flex items-center justify-between text-[10px] font-bold">
-              <span class="text-slate-400">Daily Risk Limit:</span>
-              <span id="rms-shield-limit" class="text-slate-800 font-mono">3.0% (₹6,000 Max SL)</span>
-            </div>
-            <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-              <div id="rms-progress-bar" class="bg-emerald-500 h-full rounded-full transition-all duration-300" style="width: 0%;"></div>
-            </div>
-          </div>
-          <p class="text-[10px] text-slate-400 leading-tight">
-            Auto-stops active strategies and triggers emergency square-off if daily drawdown reaches 3% of capital.
-          </p>
-        </div>
-
-        <!-- Emergency Kill-Switch in Sidebar (Snug & Stable) -->
-        <div class="pt-1">
-          <button onclick="emergencySquareOff()" id="kill-btn" class="w-full py-2.5 px-3 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-md bg-red-500 hover:bg-red-600 text-white shadow-red-500/20 active:scale-95">
-            <span>🚨</span>
-            <span>Emergency Kill-Switch</span>
-          </button>
-        </div>
-
-      </div>
-    </aside>
-
-    <!-- RIGHT SIDE CONTENT WRAPPER (HEADER LOCKED & FIXED, CONTENT SCROLLABLE) -->
-    <div class="flex-1 min-w-0 flex flex-col lg:h-full lg:overflow-hidden gap-3 sm:gap-4">
-      
-      <!-- MOBILE APP BAR (< lg) -->
-      <div class="flex lg:hidden items-center justify-between bg-white rounded-2xl p-3 card-shadow border border-slate-100/80">
-        <div class="flex items-center gap-2.5">
-          <button onclick="toggleMobileSidebar(true)" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 flex items-center justify-center text-base font-bold active:scale-95 transition-all shadow-xs" title="Open Navigation Menu">
-            ☰
-          </button>
-          <div class="flex items-center gap-2">
-            <div class="w-7 h-7 rounded-xl bg-[#3b5bfd] text-white flex items-center justify-center font-black text-xs shadow-sm">
-              ⚡
-            </div>
-            <div>
-              <span class="text-xs font-black text-slate-900 tracking-tight block leading-tight">AlgoDeck</span>
-              <span id="mobile-current-tab-title" class="text-[9px] font-bold text-slate-400 block leading-none">Dashboard</span>
-            </div>
-          </div>
-        </div>
-        <div class="flex items-center gap-1.5">
-          <!-- Mobile Mode Switcher Pill -->
-          <button onclick="setTradingMode(currentTradingMode === 'paper' ? 'live' : 'paper')" id="mobile-mode-pill" class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-blue-50 text-[#3b5bfd] border border-blue-200 flex items-center gap-1 active:scale-95 transition-all">
-            <span class="w-1.5 h-1.5 rounded-full bg-[#3b5bfd] animate-pulse"></span>
-            <span id="mobile-mode-text">Paper Sim</span>
-          </button>
-          <button onclick="openAuthModal()" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center text-xs active:scale-95 transition-all" title="User Profile">
-            👤
-          </button>
+        <div class="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between text-xs font-mono">
+          <span class="text-slate-400">Capital: ₹1,50,000</span>
+          <button onclick="openLoginModal()" class="text-brand-500 hover:text-brand-400 font-bold">Deploy &rarr;</button>
         </div>
       </div>
 
-      <!-- MOBILE QUICK HORIZONTAL TABS BAR (< lg) -->
-      <div class="flex lg:hidden items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 text-xs font-bold whitespace-nowrap">
-        <button onclick="switchTab('tab-overview', this); syncMobileQuickTabs('tab-overview')" class="mobile-q-tab px-3 py-1.5 rounded-xl bg-[#3b5bfd] text-white shadow-sm flex items-center gap-1.5 transition-all flex-shrink-0" data-tab="tab-overview">
-          <span>📊</span><span>Dashboard</span>
-        </button>
-        <button onclick="switchTab('tab-active-algos', this); syncMobileQuickTabs('tab-active-algos')" class="mobile-q-tab px-3 py-1.5 rounded-xl bg-white text-slate-600 border border-slate-200 flex items-center gap-1.5 transition-all flex-shrink-0" data-tab="tab-active-algos">
-          <span>⚡</span><span>Active Algos</span>
-        </button>
-        <button onclick="switchTab('tab-sandbox-engine', this); syncMobileQuickTabs('tab-sandbox-engine')" class="mobile-q-tab px-3 py-1.5 rounded-xl bg-white text-slate-600 border border-slate-200 flex items-center gap-1.5 transition-all flex-shrink-0" data-tab="tab-sandbox-engine">
-          <span>🎮</span><span>Sandbox</span>
-        </button>
-        <button onclick="switchTab('tab-trade-ledger', this); syncMobileQuickTabs('tab-trade-ledger')" class="mobile-q-tab px-3 py-1.5 rounded-xl bg-white text-slate-600 border border-slate-200 flex items-center gap-1.5 transition-all flex-shrink-0" data-tab="tab-trade-ledger">
-          <span>📑</span><span>Ledger</span>
-        </button>
-        <button onclick="switchTab('tab-all-strategies', this); syncMobileQuickTabs('tab-all-strategies')" class="mobile-q-tab px-3 py-1.5 rounded-xl bg-white text-slate-600 border border-slate-200 flex items-center gap-1.5 transition-all flex-shrink-0" data-tab="tab-all-strategies">
-          <span>🧩</span><span>All 7 Algos</span>
-        </button>
-      </div>
-
-      <!-- Top Header Bar with Mode Switcher (DESKTOP VIEW: MATCHING SIDEBAR) -->
-      <header class="hidden lg:flex flex-shrink-0 bg-white rounded-[28px] px-6 py-4 flex-col sm:flex-row sm:items-center justify-between gap-4 card-shadow border border-slate-100/80">
-        <div class="flex items-center gap-3">
-          <h1 id="page-title" class="text-2xl font-black text-slate-900 tracking-tight leading-none">Dashboard</h1>
-          
-          <!-- Execution Mode Pill -->
-          <span id="mode-badge" class="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-blue-50 text-[#3b5bfd] border border-blue-200 shadow-xs whitespace-nowrap">
-            <span class="w-2 h-2 rounded-full bg-[#3b5bfd] animate-pulse"></span>
-            Paper Trading Active
-          </span>
+      <!-- 02 Sensex Titan Alpha -->
+      <div class="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 card-glow transition-all flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] uppercase font-mono font-bold px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">BSE Futures</span>
+            <span class="text-xs font-mono font-bold text-emerald-400">Win: 75.8%</span>
+          </div>
+          <h3 class="text-lg font-bold text-white mt-4">2. Sensex Titan Alpha</h3>
+          <p class="text-xs text-slate-400 mt-2">High-momentum Sensex futures scalp engine with strict lunch-hour filter and 1:1.5 RR ratio.</p>
         </div>
-
-        <!-- Quick Switcher Tabs & Sign-In/Broker Buttons in Header -->
-        <div class="flex flex-wrap items-center gap-2">
-          
-          <!-- Mode Toggle: Paper Trading vs Live Dhan -->
-          <div class="flex items-center gap-1 bg-slate-50 p-1 rounded-2xl border border-slate-200/80">
-            <button onclick="setTradingMode('paper')" id="btn-mode-paper" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#3b5bfd] text-white shadow">
-              📝 Paper Sim
-            </button>
-            <button onclick="setTradingMode('live')" id="btn-mode-live" class="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 flex items-center gap-1">
-              <span>⚡ Live Dhan</span>
-            </button>
-            
-            <!-- Live Dhan Balance Quick Switcher (Interactive for user test) -->
-            <div id="live-bal-switcher" class="hidden items-center gap-1 pl-2 ml-1 border-l border-slate-200">
-              <span class="text-[10px] font-bold text-slate-400">Live Bal:</span>
-              <button onclick="setLiveDhanBalance(0)" id="btn-bal-0" class="px-2 py-0.5 rounded-lg text-[10px] font-black bg-emerald-600 text-white shadow-xs" title="Test with ₹0 Live Unfunded Balance">
-                ₹0
-              </button>
-              <button onclick="setLiveDhanBalance(10000)" id="btn-bal-10k" class="px-2 py-0.5 rounded-lg text-[10px] font-bold text-slate-600 hover:bg-slate-100" title="Test with ₹10,000 Live Funded Balance">
-                ₹10,000
-              </button>
-            </div>
-          </div>
-
-          <!-- Account Sign-In Button (If user wants to switch account) -->
-          <button onclick="openAuthModal()" class="px-3.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5">
-            <span>👤 Switch User</span>
-          </button>
-        </div>
-      </header>
-
-      <!-- SCROLLABLE TAB CONTENT AREA -->
-      <main class="flex-1 min-w-0 lg:overflow-y-auto pr-1 space-y-5 sm:space-y-6">
-
-      <!-- TAB 1: OVERVIEW -->
-      <div id="tab-overview" class="tab-content active space-y-6">
-        
-        <!-- 4 Metric Cards (Responsive 2x2 Grid on Mobile, 4 Cols on Desktop) -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-          
-          <!-- Card 1: Initial Funds vs Current Net Portfolio -->
-          <div id="card-metric-portfolio" class="bg-[#3b5bfd] rounded-2xl sm:rounded-[28px] p-3.5 sm:p-5 text-white shadow-xl shadow-blue-500/20 flex flex-col justify-between transition-colors">
-            <div class="flex items-center justify-between gap-1">
-              <span id="metric-p-title" class="text-[11px] sm:text-xs text-blue-100 font-medium truncate">Net Portfolio</span>
-              <span id="metric-p-badge" class="text-[9px] sm:text-[11px] font-bold bg-[#10b981] text-white px-1.5 sm:px-2.5 py-0.5 rounded-full font-sans whitespace-nowrap">
-                +24.3%
-              </span>
-            </div>
-            <div class="mt-2.5 sm:mt-4">
-              <div id="metric-p-value" class="text-xl sm:text-2xl font-black tracking-tight font-mono">₹2,48,650</div>
-              <div class="mt-1.5 sm:mt-2 pt-1.5 sm:pt-2 border-t border-white/20 flex items-center justify-between text-[10px] sm:text-[11px] text-blue-100 font-mono">
-                <span id="metric-p-sub-fund">Fund: ₹2.0L</span>
-                <span id="metric-p-sub-gain" class="font-bold text-white">+₹48.6K</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Card 2: Gross Return & Win Rate -->
-          <div class="bg-white rounded-2xl sm:rounded-[28px] p-3.5 sm:p-5 shadow-sm border border-slate-100/80 flex flex-col justify-between">
-            <div class="flex items-center justify-between gap-1">
-              <span id="metric-gross-title" class="text-[11px] sm:text-xs text-slate-400 font-medium truncate">Gross Return</span>
-              <span id="metric-win-badge" class="text-[9px] sm:text-[11px] font-bold bg-emerald-50 text-emerald-700 px-1.5 sm:px-2.5 py-0.5 rounded-full font-sans whitespace-nowrap">
-                69.4% Win
-              </span>
-            </div>
-            <div class="mt-2.5 sm:mt-4">
-              <div class="flex items-baseline gap-1.5 font-mono">
-                <span id="metric-gross-gain" class="text-xl sm:text-2xl font-black text-emerald-600 tracking-tight">+₹65.7K</span>
-                <span id="metric-gross-loss" class="text-[10px] sm:text-xs font-bold text-red-500">-₹14.8K</span>
-              </div>
-              <div class="mt-1.5 sm:mt-2 pt-1.5 sm:pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 font-mono">
-                <span id="metric-trades-count">36 Trades</span>
-                <span id="metric-trades-wins" class="text-emerald-600 font-bold">25 Wins</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Card 3: Brokerage & Taxes Deductions (IN RED) -->
-          <div class="bg-white rounded-2xl sm:rounded-[28px] p-3.5 sm:p-5 shadow-sm border border-slate-100/80 flex flex-col justify-between">
-            <div class="flex items-center justify-between gap-1">
-              <span class="text-[11px] sm:text-xs text-slate-400 font-medium truncate">Deductions</span>
-              <span id="metric-tax-badge" class="text-[9px] sm:text-[11px] font-bold bg-red-50 text-red-600 px-1.5 sm:px-2.5 py-0.5 rounded-full font-sans whitespace-nowrap">
-                Taxes
-              </span>
-            </div>
-            <div class="mt-2.5 sm:mt-4">
-              <div id="metric-tax-value" class="text-xl sm:text-2xl font-black text-red-500 tracking-tight font-mono">-₹2,320</div>
-              <div class="mt-1.5 sm:mt-2 pt-1.5 sm:pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] sm:text-[11px] text-red-500 font-mono">
-                <span id="metric-tax-broker" class="font-bold">Brok: ₹720</span>
-                <span id="metric-tax-stt" class="font-bold">STT: ₹1.6K</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Card 4: Net Realized Profit -->
-          <div class="bg-white rounded-2xl sm:rounded-[28px] p-3.5 sm:p-5 shadow-sm border border-slate-100/80 flex flex-col justify-between">
-            <div class="flex items-center justify-between gap-1">
-              <span class="text-[11px] sm:text-xs text-slate-400 font-medium truncate">Net Realized</span>
-              <span id="metric-net-badge" class="text-[9px] sm:text-[11px] font-bold bg-indigo-50 text-indigo-700 px-1.5 sm:px-2.5 py-0.5 rounded-full font-sans whitespace-nowrap">
-                Pure Take
-              </span>
-            </div>
-            <div class="mt-2.5 sm:mt-4">
-              <div id="metric-net-value" class="text-xl sm:text-2xl font-black text-emerald-600 tracking-tight font-mono">+₹48,630</div>
-              <div class="mt-1.5 sm:mt-2 pt-1.5 sm:pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 font-mono">
-                <span id="metric-net-fee">₹7/mo Fee</span>
-                <span id="metric-net-roi" class="font-bold text-emerald-600">+24.3%</span>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- Two Column View -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          <!-- Left 2 Cols: Active Algos -->
-          <div class="lg:col-span-2 bg-white rounded-[28px] p-6 shadow-sm border border-slate-100/80 space-y-4">
-            <div class="flex items-center justify-between">
-              <div>
-                <h3 id="overview-algos-title" class="font-bold text-slate-900 text-base">Your Active Algorithms (Paper Sim)</h3>
-                <p id="overview-algos-desc" class="text-xs text-slate-400">Strategies currently active in simulator mode</p>
-              </div>
-              <button onclick="switchTab('tab-active-algos')" class="text-xs font-bold text-[#3b5bfd] hover:underline">
-                View Detailed Controls →
-              </button>
-            </div>
-
-            <div id="overview-algos-list" class="space-y-3">
-              <!-- Item 1 -->
-              <div class="p-4 rounded-2xl border border-slate-200/80 bg-slate-50/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div class="flex items-center gap-3">
-                  <div id="algo-item-dot-1" class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
-                  <div>
-                    <div class="flex items-center gap-2">
-                      <span id="algo-item-title-1" class="font-bold text-xs text-slate-800">15-Min ORB + VWAP Breakout</span>
-                      <span id="algo-item-seg-1" class="text-[10px] font-semibold text-slate-500 bg-white px-2 py-0.5 rounded-full border border-slate-200">Equity Cash</span>
-                    </div>
-                    <span id="algo-item-sub-1" class="text-[11px] text-slate-400 font-mono">Min Capital: ₹50,000 • 14 Trades</span>
-                  </div>
-                </div>
-                <div class="flex items-center gap-4 text-xs font-mono self-end sm:self-center">
-                  <div class="text-right">
-                    <span class="text-[10px] text-slate-400 block font-sans">Brokerage</span>
-                    <span id="algo-item-brok-1" class="text-red-500 font-bold">-₹560</span>
-                  </div>
-                  <div class="text-right">
-                    <span class="text-[10px] text-slate-400 block font-sans">Net P&L</span>
-                    <span id="algo-item-net-1" class="font-bold text-emerald-600">+₹16,090</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Item 2 -->
-              <div class="p-4 rounded-2xl border border-slate-200/80 bg-slate-50/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div class="flex items-center gap-3">
-                  <div id="algo-item-dot-2" class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
-                  <div>
-                    <div class="flex items-center gap-2">
-                      <span id="algo-item-title-2" class="font-bold text-xs text-slate-800">9:20 AM BankNifty Short Straddle</span>
-                      <span id="algo-item-seg-2" class="text-[10px] font-semibold text-slate-500 bg-white px-2 py-0.5 rounded-full border border-slate-200">Option Selling</span>
-                    </div>
-                    <span id="algo-item-sub-2" class="text-[11px] text-slate-400 font-mono">Min Capital: ₹1,50,000 • 16 Trades</span>
-                  </div>
-                </div>
-                <div class="flex items-center gap-4 text-xs font-mono self-end sm:self-center">
-                  <div class="text-right">
-                    <span class="text-[10px] text-slate-400 block font-sans">Brokerage</span>
-                    <span id="algo-item-brok-2" class="text-red-500 font-bold">-₹1,280</span>
-                  </div>
-                  <div class="text-right">
-                    <span class="text-[10px] text-slate-400 block font-sans">Net P&L</span>
-                    <span id="algo-item-net-2" class="font-bold text-emerald-600">+₹25,620</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Right Col: Capital Deployment 3-Ring Widget (User Requested 3 Rounds) -->
-          <div class="bg-white rounded-[28px] p-6 shadow-sm border border-slate-100/80 space-y-4">
-            <div class="flex items-center justify-between">
-              <div>
-                <h3 class="font-bold text-slate-900 text-sm">Capital Deployment</h3>
-                <p id="deploy-total-text" class="text-[11px] text-slate-400 font-mono">Total Portfolio: ₹2,48,650</p>
-              </div>
-              <span id="deploy-badge" class="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg">Paper Sim</span>
-            </div>
-
-            <!-- 3 Concentric Progress Rings (तीन राउंड - User Specified) -->
-            <div class="flex items-center justify-center relative py-2">
-              <svg class="w-44 h-44 transform -rotate-90" viewBox="0 0 120 120">
-                <!-- Round 1: Total Portfolio (Outer Ring) -->
-                <circle cx="60" cy="60" r="50" fill="none" stroke="#F1F5F9" stroke-width="5" />
-                <circle id="deploy-circle-total" cx="60" cy="60" r="50" fill="none" stroke="#3b5bfd" stroke-width="5" stroke-dasharray="314" stroke-dashoffset="0" stroke-linecap="round" />
-                
-                <!-- Round 2: Initial Fund Brought In (Middle Ring) -->
-                <circle cx="60" cy="60" r="38" fill="none" stroke="#F1F5F9" stroke-width="5" />
-                <circle id="deploy-circle-initial" cx="60" cy="60" r="38" fill="none" stroke="#0284c7" stroke-width="5" stroke-dasharray="239" stroke-dashoffset="47" stroke-linecap="round" />
-                
-                <!-- Round 3: Profit Earned / Growth (Inner Ring) -->
-                <circle cx="60" cy="60" r="26" fill="none" stroke="#F1F5F9" stroke-width="5" />
-                <circle id="deploy-circle-profit" cx="60" cy="60" r="26" fill="none" stroke="#10b981" stroke-width="5" stroke-dasharray="163" stroke-dashoffset="123" stroke-linecap="round" />
-              </svg>
-              <div class="absolute inset-0 flex flex-col items-center justify-center text-center px-1 pointer-events-none">
-                <span id="deploy-center-val" class="text-base font-black text-slate-900 font-mono leading-none">₹2.48L</span>
-                <span id="deploy-center-label" class="text-[9px] font-extrabold text-blue-600 uppercase tracking-wider mt-1">Sim Capital</span>
-              </div>
-            </div>
-
-            <!-- 3 Rounds Detail Breakdown (User Requested) -->
-            <div class="space-y-2.5 pt-2 text-xs">
-              <!-- Round 1 -->
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <span class="w-2.5 h-2.5 rounded-full bg-[#3b5bfd]"></span>
-                  <span class="text-slate-600 font-medium">1. Total Portfolio (कुल पूँजी)</span>
-                </div>
-                <span id="deploy-current-val" class="font-bold text-slate-900 font-mono">₹2,48,650</span>
-              </div>
-              <!-- Round 2 -->
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <span class="w-2.5 h-2.5 rounded-full bg-[#0284c7]"></span>
-                  <span class="text-slate-600 font-medium">2. Initial Fund (शुरुआती फंड)</span>
-                </div>
-                <span id="deploy-initial-val" class="font-bold text-slate-800 font-mono">₹2,00,000</span>
-              </div>
-              <!-- Round 3 -->
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                  <span class="text-slate-600 font-medium">3. Profit Earned (कमाया लाभ)</span>
-                </div>
-                <span id="deploy-profit-val" class="font-bold text-emerald-600 font-mono">+₹48,650 <span class="text-[10px] text-emerald-500 font-sans font-semibold">(+24.3%)</span></span>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-      </div>
-
-      <!-- TAB 2: YOUR ACTIVE ALGORITHMS -->
-      <div id="tab-active-algos" class="tab-content space-y-6">
-        <div class="bg-white rounded-[28px] p-6 shadow-sm border border-slate-100/80 space-y-5">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <div class="flex items-center gap-2">
-                <h2 class="text-lg font-black text-slate-900">Your Active Algorithms</h2>
-                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
-              </div>
-              <p class="text-xs text-slate-400 mt-0.5">
-                These strategies are actively connected to your webhook listener and trading live on DhanHQ API / Paper Sim.
-              </p>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">Master Control:</span>
-              <button onclick="setAllAlgosState(true)" class="px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 active:scale-95" title="Turn ON all algorithms">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span>Activate All</span>
-              </button>
-              <button onclick="setAllAlgosState(false)" class="px-3.5 py-1.5 bg-rose-50 hover:bg-rose-100 border border-rose-300 text-rose-800 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 active:scale-95" title="Turn OFF all algorithms">
-                <span class="w-2 h-2 rounded-full bg-red-500"></span>
-                <span>Deactivate All</span>
-              </button>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            
-            <!-- CARD 1: EQUITY CASH SEGMENT -->
-            <div id="card-algo-1" class="p-5 rounded-2xl border border-emerald-200 bg-emerald-50/20 space-y-4 flex flex-col justify-between">
-              <div class="space-y-3">
-                <div class="flex items-start justify-between">
-                  <div>
-                    <div class="flex items-center gap-2">
-                      <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                      <h3 class="font-bold text-slate-900 text-sm">15-Min ORB + VWAP Breakout</h3>
-                    </div>
-                    <span class="text-[10px] text-slate-500 bg-white px-2 py-0.5 rounded-full border border-slate-200 mt-1 inline-block">
-                      Equity Cash Segment
-                    </span>
-                  </div>
-                  <button onclick="toggleCardAlgo('card-algo-1', this)" class="w-12 h-6 flex items-center rounded-full p-1 bg-emerald-500 shadow-md shadow-emerald-500/30 transition-all duration-300 active:scale-95" title="Toggle Run/Pause">
-                    <div class="bg-white w-4 h-4 rounded-full shadow-md transform translate-x-6 transition-transform duration-300"></div>
-                  </button>
-                </div>
-
-                <!-- Multi-Lot Multiplier & Sizing Control -->
-                <div class="p-3 bg-white rounded-xl border border-slate-200/80 space-y-2">
-                  <div class="flex items-center justify-between text-xs">
-                    <label class="font-bold text-slate-700">Lot Multiplier (Lots):</label>
-                    <div class="flex items-center gap-1">
-                      <button onclick="adjustActiveCardLots('algo-1', -1)" class="w-6 h-6 bg-slate-100 hover:bg-slate-200 rounded font-black text-slate-700 text-xs">-</button>
-                      <input type="number" id="algo-1-lots-input" value="1" min="1" max="50" onchange="calcActiveCardDeductions('algo-1')" class="w-10 h-6 text-center font-bold font-mono text-xs border border-slate-300 rounded bg-slate-50">
-                      <button onclick="adjustActiveCardLots('algo-1', 1)" class="w-6 h-6 bg-slate-100 hover:bg-slate-200 rounded font-black text-slate-700 text-xs">+</button>
-                    </div>
-                  </div>
-                  <!-- Quick Preset Buttons -->
-                  <div class="flex gap-1">
-                    <button onclick="setActiveCardLotsPreset('algo-1', 1)" class="flex-1 py-0.5 text-[10px] font-bold bg-slate-50 hover:bg-blue-50 border border-slate-200 rounded text-slate-700">1x</button>
-                    <button onclick="setActiveCardLotsPreset('algo-1', 2)" class="flex-1 py-0.5 text-[10px] font-bold bg-slate-50 hover:bg-blue-50 border border-slate-200 rounded text-slate-700">2x</button>
-                    <button onclick="setActiveCardLotsPreset('algo-1', 5)" class="flex-1 py-0.5 text-[10px] font-bold bg-slate-50 hover:bg-blue-50 border border-slate-200 rounded text-slate-700">5x</button>
-                    <button onclick="setActiveCardLotsPreset('algo-1', 10)" class="flex-1 py-0.5 text-[10px] font-bold bg-blue-50 border border-blue-300 rounded text-[#3b5bfd]">10x</button>
-                    <button onclick="setActiveCardLotsPreset('algo-1', 20)" class="flex-1 py-0.5 text-[10px] font-bold bg-slate-50 hover:bg-blue-50 border border-slate-200 rounded text-slate-700">20x</button>
-                  </div>
-                  <div class="pt-1.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-mono">
-                    <span>Shares: <strong id="algo-1-qty-display" class="text-slate-800">100 Qty</strong></span>
-                    <span>Margin: <strong id="algo-1-margin-display" class="text-slate-800">₹50,000</strong></span>
-                  </div>
-                </div>
-
-                <!-- Stats Grid: Gross, Trailing SL Loss, and Taxes -->
-                <div class="grid grid-cols-3 gap-2 p-3 bg-white rounded-xl border border-slate-100 font-mono text-center text-xs">
-                  <div>
-                    <span class="text-[10px] text-slate-400 block font-sans">Gross Return</span>
-                    <span id="algo-1-gross-display" class="font-bold text-emerald-600">+₹16,650</span>
-                  </div>
-                  <div>
-                    <span class="text-[10px] text-slate-400 block font-sans">Trailing SL</span>
-                    <span id="algo-1-loss-display" class="font-bold text-amber-600">-₹2,500</span>
-                  </div>
-                  <div>
-                    <span class="text-[10px] text-slate-400 block font-sans">Est. Taxes</span>
-                    <span id="algo-1-taxes-display" class="font-bold text-red-500">-₹560</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Deductions Breakdown Criteria Link -->
-              <div class="pt-2 border-t border-emerald-200/60 flex items-center justify-between text-[11px] gap-2">
-                <span class="text-slate-500 font-medium truncate">STT: 0.025% • Brok: Flat ₹20</span>
-                <button onclick="openBrokerageModal('CASH', parseInt(document.getElementById('algo-1-lots-input').value)||1, 100, 104)" class="text-[#3b5bfd] font-bold hover:underline whitespace-nowrap flex-shrink-0">
-                  Full Breakdown ↗
-                </button>
-              </div>
-            </div>
-
-            <!-- CARD 2: OPTIONS SELLING SEGMENT -->
-            <div id="card-algo-2" class="p-5 rounded-2xl border border-emerald-200 bg-emerald-50/20 space-y-4 flex flex-col justify-between">
-              <div class="space-y-3">
-                <div class="flex items-start justify-between">
-                  <div>
-                    <div class="flex items-center gap-2">
-                      <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                      <h3 class="font-bold text-slate-900 text-sm">9:20 AM BankNifty Short Straddle</h3>
-                    </div>
-                    <span class="text-[10px] text-slate-500 bg-white px-2 py-0.5 rounded-full border border-slate-200 mt-1 inline-block">
-                      Option Selling Segment
-                    </span>
-                  </div>
-                  <button onclick="toggleCardAlgo('card-algo-2', this)" class="w-12 h-6 flex items-center rounded-full p-1 bg-emerald-500 shadow-md shadow-emerald-500/30 transition-all duration-300 active:scale-95" title="Toggle Run/Pause">
-                    <div class="bg-white w-4 h-4 rounded-full shadow-md transform translate-x-6 transition-transform duration-300"></div>
-                  </button>
-                </div>
-
-                <!-- Multi-Lot Multiplier & Sizing Control -->
-                <div class="p-3 bg-white rounded-xl border border-slate-200/80 space-y-2">
-                  <div class="flex items-center justify-between text-xs">
-                    <label class="font-bold text-slate-700">Multi-Lot (NSE Official: 15 Qty/Lot):</label>
-                    <div class="flex items-center gap-1">
-                      <button onclick="adjustActiveCardLots('algo-2', -1)" class="w-6 h-6 bg-slate-100 hover:bg-slate-200 rounded font-black text-slate-700 text-xs">-</button>
-                      <input type="number" id="algo-2-lots-input" value="1" min="1" max="50" onchange="calcActiveCardDeductions('algo-2')" class="w-10 h-6 text-center font-bold font-mono text-xs border border-slate-300 rounded bg-slate-50">
-                      <button onclick="adjustActiveCardLots('algo-2', 1)" class="w-6 h-6 bg-slate-100 hover:bg-slate-200 rounded font-black text-slate-700 text-xs">+</button>
-                    </div>
-                  </div>
-                  <!-- Quick Preset Buttons (User specifically requested 10 Lots, 20 Lots) -->
-                  <div class="flex gap-1">
-                    <button onclick="setActiveCardLotsPreset('algo-2', 1)" class="flex-1 py-0.5 text-[10px] font-bold bg-slate-50 hover:bg-blue-50 border border-slate-200 rounded text-slate-700">1 Lot</button>
-                    <button onclick="setActiveCardLotsPreset('algo-2', 2)" class="flex-1 py-0.5 text-[10px] font-bold bg-slate-50 hover:bg-blue-50 border border-slate-200 rounded text-slate-700">2 Lots</button>
-                    <button onclick="setActiveCardLotsPreset('algo-2', 5)" class="flex-1 py-0.5 text-[10px] font-bold bg-slate-50 hover:bg-blue-50 border border-slate-200 rounded text-slate-700">5 Lots</button>
-                    <button onclick="setActiveCardLotsPreset('algo-2', 10)" class="flex-1 py-0.5 text-[10px] font-bold bg-blue-50 border border-blue-300 rounded text-[#3b5bfd]">10 Lots</button>
-                    <button onclick="setActiveCardLotsPreset('algo-2', 20)" class="flex-1 py-0.5 text-[10px] font-bold bg-slate-50 hover:bg-blue-50 border border-slate-200 rounded text-slate-700">20 Lots</button>
-                  </div>
-                  <div class="pt-1.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-mono">
-                    <span>Quantity: <strong id="algo-2-qty-display" class="text-slate-800">15 Qty</strong></span>
-                    <span>Margin: <strong id="algo-2-margin-display" class="text-slate-800">₹1,50,000</strong></span>
-                  </div>
-                </div>
-
-                <!-- Stats Grid: Gross, Trailing SL Loss, and Taxes -->
-                <div class="grid grid-cols-3 gap-2 p-3 bg-white rounded-xl border border-slate-100 font-mono text-center text-xs">
-                  <div>
-                    <span class="text-[10px] text-slate-400 block font-sans">Gross Return</span>
-                    <span id="algo-2-gross-display" class="font-bold text-emerald-600">+₹26,900</span>
-                  </div>
-                  <div>
-                    <span class="text-[10px] text-slate-400 block font-sans">Trailing SL</span>
-                    <span id="algo-2-loss-display" class="font-bold text-amber-600">-₹4,200</span>
-                  </div>
-                  <div>
-                    <span class="text-[10px] text-slate-400 block font-sans">Option Charges</span>
-                    <span id="algo-2-taxes-display" class="font-bold text-red-500">-₹1,280</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Deductions Breakdown Criteria Link -->
-              <div class="pt-2 border-t border-emerald-200/60 flex items-center justify-between text-[11px] gap-2">
-                <span class="text-slate-500 font-medium truncate">STT: 0.1% • ₹20/leg</span>
-                <button onclick="openBrokerageModal('OPTIONS', parseInt(document.getElementById('algo-2-lots-input').value)||1, 120, 160)" class="text-[#3b5bfd] font-bold hover:underline whitespace-nowrap flex-shrink-0">
-                  Full Breakdown ↗
-                </button>
-              </div>
-            </div>
-
-            <!-- CARD 3: INDEX FUTURES SEGMENT (OFF - RED) -->
-            <div id="card-algo-3" class="p-5 rounded-2xl border border-rose-200 bg-rose-50/10 opacity-70 space-y-4 flex flex-col justify-between">
-              <div class="space-y-3">
-                <div class="flex items-start justify-between">
-                  <div>
-                    <div class="flex items-center gap-2">
-                      <span class="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
-                      <h3 class="font-bold text-slate-900 text-sm">Nifty Trend Momentum Futures</h3>
-                    </div>
-                    <span class="text-[10px] text-slate-500 bg-white px-2 py-0.5 rounded-full border border-slate-200 mt-1 inline-block">
-                      Index Futures Segment
-                    </span>
-                  </div>
-                  <button onclick="toggleCardAlgo('card-algo-3', this)" class="w-12 h-6 flex items-center rounded-full p-1 bg-red-500 shadow-md shadow-red-500/30 transition-all duration-300 active:scale-95" title="Toggle Run/Pause">
-                    <div class="bg-white w-4 h-4 rounded-full shadow-md transform translate-x-0 transition-transform duration-300"></div>
-                  </button>
-                </div>
-
-                <!-- Multi-Lot Multiplier & Sizing Control -->
-                <div class="p-3 bg-white rounded-xl border border-slate-200/80 space-y-2">
-                  <div class="flex items-center justify-between text-xs">
-                    <label class="font-bold text-slate-700">Multi-Lot (NSE Official: 25 Qty/Lot):</label>
-                    <div class="flex items-center gap-1">
-                      <button onclick="adjustActiveCardLots('algo-3', -1)" class="w-6 h-6 bg-slate-100 hover:bg-slate-200 rounded font-black text-slate-700 text-xs">-</button>
-                      <input type="number" id="algo-3-lots-input" value="1" min="1" max="50" onchange="calcActiveCardDeductions('algo-3')" class="w-10 h-6 text-center font-bold font-mono text-xs border border-slate-300 rounded bg-slate-50">
-                      <button onclick="adjustActiveCardLots('algo-3', 1)" class="w-6 h-6 bg-slate-100 hover:bg-slate-200 rounded font-black text-slate-700 text-xs">+</button>
-                    </div>
-                  </div>
-                  <!-- Quick Preset Buttons -->
-                  <div class="flex gap-1">
-                    <button onclick="setActiveCardLotsPreset('algo-3', 1)" class="flex-1 py-0.5 text-[10px] font-bold bg-slate-50 hover:bg-blue-50 border border-slate-200 rounded text-slate-700">1 Lot</button>
-                    <button onclick="setActiveCardLotsPreset('algo-3', 2)" class="flex-1 py-0.5 text-[10px] font-bold bg-slate-50 hover:bg-blue-50 border border-slate-200 rounded text-slate-700">2 Lots</button>
-                    <button onclick="setActiveCardLotsPreset('algo-3', 5)" class="flex-1 py-0.5 text-[10px] font-bold bg-slate-50 hover:bg-blue-50 border border-slate-200 rounded text-slate-700">5 Lots</button>
-                    <button onclick="setActiveCardLotsPreset('algo-3', 10)" class="flex-1 py-0.5 text-[10px] font-bold bg-blue-50 border border-blue-300 rounded text-[#3b5bfd]">10 Lots</button>
-                    <button onclick="setActiveCardLotsPreset('algo-3', 20)" class="flex-1 py-0.5 text-[10px] font-bold bg-slate-50 hover:bg-blue-50 border border-slate-200 rounded text-slate-700">20 Lots</button>
-                  </div>
-                  <div class="pt-1.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-mono">
-                    <span>Quantity: <strong id="algo-3-qty-display" class="text-slate-800">25 Qty</strong></span>
-                    <span>Margin: <strong id="algo-3-margin-display" class="text-slate-800">₹1,20,000</strong></span>
-                  </div>
-                </div>
-
-                <!-- Stats Grid: Gross, Trailing SL Loss, and Taxes -->
-                <div class="grid grid-cols-3 gap-2 p-3 bg-white rounded-xl border border-slate-100 font-mono text-center text-xs">
-                  <div>
-                    <span class="text-[10px] text-slate-400 block font-sans">Gross Return</span>
-                    <span id="algo-3-gross-display" class="font-bold text-emerald-600">+₹18,500</span>
-                  </div>
-                  <div>
-                    <span class="text-[10px] text-slate-400 block font-sans">Trailing SL</span>
-                    <span id="algo-3-loss-display" class="font-bold text-amber-600">-₹3,800</span>
-                  </div>
-                  <div>
-                    <span class="text-[10px] text-slate-400 block font-sans">Futures Charges</span>
-                    <span id="algo-3-taxes-display" class="font-bold text-red-500">-₹720</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Deductions Breakdown Criteria Link -->
-              <div class="pt-2 border-t border-blue-200/60 flex items-center justify-between text-[11px] gap-2">
-                <span class="text-slate-500 font-medium truncate">STT: 0.02% • ₹20/leg</span>
-                <button onclick="openBrokerageModal('FUTURES', parseInt(document.getElementById('algo-3-lots-input').value)||1, 23500, 23580)" class="text-[#3b5bfd] font-bold hover:underline whitespace-nowrap flex-shrink-0">
-                  Full Breakdown ↗
-                </button>
-              </div>
-            </div>
-
-          </div>
+        <div class="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between text-xs font-mono">
+          <span class="text-slate-400">Capital: ₹1,25,000</span>
+          <button onclick="openLoginModal()" class="text-brand-500 hover:text-brand-400 font-bold">Deploy &rarr;</button>
         </div>
       </div>
 
-      <!-- TAB 3: MY STRATEGIES -->
-      <div id="tab-my-strategies" class="tab-content space-y-6">
-        <div class="bg-white rounded-[28px] p-6 shadow-sm border border-slate-100/80 space-y-5">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h2 class="text-lg font-black text-slate-900">My Selected Strategies</h2>
-              <p class="text-xs text-slate-400 mt-0.5">
-                Every strategy in your personal bucket. The <strong class="text-emerald-600">Run Toggle</strong> controls live order routing on DhanHQ.
-              </p>
-            </div>
-            <button onclick="switchTab('tab-all-strategies')" class="px-4 py-2 bg-[#3b5bfd] hover:bg-blue-600 text-white rounded-xl text-xs font-bold transition-all shadow-md">
-              + Add More Strategies
-            </button>
+      <!-- 03 Sensex Bull Strike CE -->
+      <div class="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 card-glow transition-all flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] uppercase font-mono font-bold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Options CE</span>
+            <span class="text-xs font-mono font-bold text-emerald-400">Win: 66.3%</span>
           </div>
-
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
-              <thead>
-                <tr class="border-b border-slate-100 text-slate-400 uppercase text-[10px] tracking-wider font-semibold">
-                  <th class="pb-3 pl-2">Strategy Name</th>
-                  <th class="pb-3">Segment</th>
-                  <th class="pb-3">Capital Sizing</th>
-                  <th class="pb-3 text-center">Run Toggle</th>
-                  <th class="pb-3 text-center">Status</th>
-                  <th class="pb-3 text-right">Trades</th>
-                  <th class="pb-3 text-right">Net In-Hand</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-100 font-mono">
-                <tr class="hover:bg-slate-50/70 transition-colors">
-                  <td class="py-4 pl-2 font-sans font-bold text-slate-800">
-                    15-Min ORB + VWAP Breakout
-                    <div class="text-[10px] text-slate-400 font-normal">Opening range breakout with volume confirmation</div>
-                  </td>
-                  <td class="py-4 font-sans"><span class="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">Equity Cash</span></td>
-                  <td class="py-4 text-slate-700">
-                    <div class="flex items-center gap-1.5 font-sans">
-                      <button onclick="adjustTableLots('row-1', -1, 50000, 'x')" class="w-5 h-5 bg-slate-100 hover:bg-slate-200 rounded font-bold text-slate-700 text-xs">-</button>
-                      <span id="row-1-lots-text" class="font-mono font-bold text-xs text-slate-800">1x (₹50k)</span>
-                      <button onclick="adjustTableLots('row-1', 1, 50000, 'x')" class="w-5 h-5 bg-slate-100 hover:bg-slate-200 rounded font-bold text-slate-700 text-xs">+</button>
-                    </div>
-                  </td>
-                  <td class="py-4 text-center">
-                    <button onclick="toggleTableRowAlgo(this)" class="w-11 h-6 inline-flex items-center rounded-full p-1 bg-emerald-500 shadow-md shadow-emerald-500/30 transition-all duration-300">
-                      <div class="bg-white w-4 h-4 rounded-full shadow-md transform translate-x-6 transition-transform duration-300"></div>
-                    </button>
-                  </td>
-                  <td class="py-4 text-center font-sans">
-                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      🟢 ACTIVE
-                    </span>
-                  </td>
-                  <td class="py-4 text-right text-slate-600">14</td>
-                  <td class="py-4 text-right font-black text-emerald-600">+₹16,090</td>
-                </tr>
-
-                <tr class="hover:bg-slate-50/70 transition-colors">
-                  <td class="py-4 pl-2 font-sans font-bold text-slate-800">
-                    9:20 AM BankNifty Short Straddle
-                    <div class="text-[10px] text-slate-400 font-normal">Delta-neutral decay capture with 25% individual leg SL</div>
-                  </td>
-                  <td class="py-4 font-sans"><span class="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">Option Selling</span></td>
-                  <td class="py-4 text-slate-700">
-                    <div class="flex items-center gap-1.5 font-sans">
-                      <button onclick="adjustTableLots('row-2', -1, 150000, 'Lot')" class="w-5 h-5 bg-slate-100 hover:bg-slate-200 rounded font-bold text-slate-700 text-xs">-</button>
-                      <span id="row-2-lots-text" class="font-mono font-bold text-xs text-blue-600">1 Lot (₹1.5L)</span>
-                      <button onclick="adjustTableLots('row-2', 1, 150000, 'Lot')" class="w-5 h-5 bg-slate-100 hover:bg-slate-200 rounded font-bold text-slate-700 text-xs">+</button>
-                    </div>
-                  </td>
-                  <td class="py-4 text-center">
-                    <button onclick="toggleTableRowAlgo(this)" class="w-11 h-6 inline-flex items-center rounded-full p-1 bg-emerald-500 shadow-md shadow-emerald-500/30 transition-all duration-300">
-                      <div class="bg-white w-4 h-4 rounded-full shadow-md transform translate-x-6 transition-transform duration-300"></div>
-                    </button>
-                  </td>
-                  <td class="py-4 text-center font-sans">
-                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      🟢 ACTIVE
-                    </span>
-                  </td>
-                  <td class="py-4 text-right text-slate-600">16</td>
-                  <td class="py-4 text-right font-black text-emerald-600">+₹25,620</td>
-                </tr>
-
-                <tr class="hover:bg-slate-50/70 transition-colors opacity-75">
-                  <td class="py-4 pl-2 font-sans font-bold text-slate-800">
-                    Nifty Trend Momentum Futures
-                    <div class="text-[10px] text-slate-400 font-normal">Supertrend + EMA cross directional index futures algorithm</div>
-                  </td>
-                  <td class="py-4 font-sans"><span class="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">Index Futures</span></td>
-                  <td class="py-4 text-slate-700">
-                    <div class="flex items-center gap-1.5 font-sans">
-                      <button onclick="adjustTableLots('row-3', -1, 120000, 'Lot')" class="w-5 h-5 bg-slate-100 hover:bg-slate-200 rounded font-bold text-slate-700 text-xs">-</button>
-                      <span id="row-3-lots-text" class="font-mono font-bold text-xs text-slate-600">1 Lot (₹1.2L)</span>
-                      <button onclick="adjustTableLots('row-3', 1, 120000, 'Lot')" class="w-5 h-5 bg-slate-100 hover:bg-slate-200 rounded font-bold text-slate-700 text-xs">+</button>
-                    </div>
-                  </td>
-                  <td class="py-4 text-center">
-                    <button onclick="toggleTableRowAlgo(this)" class="w-11 h-6 inline-flex items-center rounded-full p-1 bg-red-500 shadow-md shadow-red-500/30 transition-all duration-300">
-                      <div class="bg-white w-4 h-4 rounded-full shadow-md transform translate-x-0 transition-transform duration-300"></div>
-                    </button>
-                  </td>
-                  <td class="py-4 text-center font-sans">
-                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                      🔴 OFF
-                    </span>
-                  </td>
-                  <td class="py-4 text-right text-slate-600">0</td>
-                  <td class="py-4 text-right font-black text-slate-500">₹0.00</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          <h3 class="text-lg font-bold text-white mt-4">3. Sensex Bull Strike</h3>
+          <p class="text-xs text-slate-400 mt-2">Algorithmic Call Options buyer for impulse bullish breakouts with automated strike selection.</p>
+        </div>
+        <div class="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between text-xs font-mono">
+          <span class="text-slate-400">Capital: ₹25,000</span>
+          <button onclick="openLoginModal()" class="text-brand-500 hover:text-brand-400 font-bold">Deploy &rarr;</button>
         </div>
       </div>
 
-      <!-- ===================================================================== -->
-      <!-- DEDICATED TAB: PAPER TRADING SANDBOX ENGINE (NO BROKER REQUIRED)     -->
-      <!-- ===================================================================== -->
-      <div id="tab-sandbox-engine" class="tab-content space-y-6">
-        
-        <!-- Hero Header: Simulation Mode Banner (DealDeck Institutional Dark-to-Light Blue Gradient) -->
-        <div class="rounded-[28px] p-6 sm:p-7 text-white shadow-xl shadow-blue-950/20 relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-6" style="background: linear-gradient(135deg, #070D1E 0%, #0D1A3A 35%, #16367D 70%, #2563EB 100%);">
-          <!-- Ambient lighting effects -->
-          <div class="absolute -right-16 -top-16 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
-          <div class="absolute -left-16 -bottom-16 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
-
-          <div class="space-y-2 z-10">
-            <div class="flex items-center gap-2">
-              <span class="px-3 py-1 rounded-full bg-white/10 border border-white/20 text-white text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 backdrop-blur-sm">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-                Paper Engine Online
-              </span>
-              <span class="text-blue-200 text-xs font-semibold">100% Risk-Free Simulation</span>
-            </div>
-            <h2 class="text-2xl font-black tracking-tight text-white">Paper Trading Sandbox Engine</h2>
-            <p class="text-xs text-blue-100 max-w-xl leading-relaxed">
-              किसी ब्रोकर API या डिमैट अकाउंट की आवश्यकता नहीं है! <strong>Active Algos</strong> में चालू की गई सभी स्ट्रैटेजीज़ यहाँ <strong>₹2,00,000</strong> वर्चुअल कैपिटल के साथ ऑटोमैटिकली सिमुलेट होकर लाइव ट्रेड्स और वास्तविक ब्रोकरेज कटौती के बाद शुद्ध P&L दिखाती हैं।
-            </p>
+      <!-- 04 Sensex Bear Shield PE -->
+      <div class="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 card-glow transition-all flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] uppercase font-mono font-bold px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20">Options PE</span>
+            <span class="text-xs font-mono font-bold text-emerald-400">Win: 65.2%</span>
           </div>
-
-          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 z-10 w-full md:w-auto">
-            <div class="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 text-center min-w-[160px] shadow-lg shadow-black/20">
-              <span class="text-[10px] uppercase font-bold text-blue-200 block">Virtual Balance</span>
-              <span id="sandbox-funds-display" class="text-2xl font-black font-mono text-white">₹2,00,000</span>
-              <span class="text-[10px] text-emerald-300 block font-bold mt-0.5">● Active Demo Funds</span>
-            </div>
-            <button onclick="addSandboxVirtualFunds(200000)" class="px-6 py-3.5 bg-emerald-400 hover:bg-emerald-300 text-slate-900 rounded-2xl text-sm font-black tracking-tight transition-all shadow-lg shadow-emerald-500/30 hover:shadow-emerald-400/50 active:scale-95 flex items-center justify-center border border-emerald-300/80 animate-pulse font-sans" title="Add ₹2,00,000 Virtual Funds">
-              <span>Add Fund</span>
-            </button>
-          </div>
+          <h3 class="text-lg font-bold text-white mt-4">4. Sensex Bear Shield</h3>
+          <p class="text-xs text-slate-400 mt-2">Rapid Put Options sniper for sharp market drop cascades with guaranteed stop-loss buffer.</p>
         </div>
-
-        <!-- 4 Live Simulator Stat Cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div class="bg-white rounded-[24px] p-5 shadow-sm border border-slate-100/80 flex flex-col justify-between">
-            <div class="flex items-center justify-between">
-              <span class="text-xs text-slate-400 font-medium">Allocated Margin</span>
-              <span class="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full" id="sandbox-margin-pct">75% Used</span>
-            </div>
-            <div class="mt-3">
-              <div id="sandbox-margin-used" class="text-xl font-black text-slate-800 font-mono">₹1,50,000</div>
-              <span class="text-[11px] text-slate-400 block mt-1 font-sans">Free Margin: <strong id="sandbox-margin-free" class="text-emerald-600 font-mono font-bold">₹50,000</strong></span>
-            </div>
-          </div>
-
-          <div class="bg-white rounded-[24px] p-5 shadow-sm border border-slate-100/80 flex flex-col justify-between">
-            <div class="flex items-center justify-between">
-              <span class="text-xs text-slate-400 font-medium">Gross Demo Return</span>
-              <span class="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">3 Active Positions</span>
-            </div>
-            <div class="mt-3">
-              <div id="sandbox-gross-pnl" class="text-xl font-black text-emerald-600 font-mono">+₹9,450.00</div>
-              <span class="text-[11px] text-slate-400 block mt-1 font-sans">Simulated Market Ticks</span>
-            </div>
-          </div>
-
-          <div class="bg-white rounded-[24px] p-5 shadow-sm border border-slate-100/80 flex flex-col justify-between">
-            <div class="flex items-center justify-between">
-              <span class="text-xs text-slate-400 font-medium">Virtual Deductions</span>
-              <button onclick="openBrokerageModal()" class="text-[10px] font-bold text-amber-700 hover:underline">Rates Criteria ↗</button>
-            </div>
-            <div class="mt-3">
-              <div id="sandbox-deductions" class="text-xl font-black text-red-500 font-mono">-₹185.60</div>
-              <span class="text-[11px] text-slate-400 block mt-1 font-sans">₹40 Brok/Order + STT + GST</span>
-            </div>
-          </div>
-
-          <div class="bg-white rounded-[24px] p-5 shadow-sm border border-slate-100/80 flex flex-col justify-between">
-            <div class="flex items-center justify-between">
-              <span class="text-xs text-slate-400 font-medium">Net Realized Take-Home</span>
-              <span class="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">+4.63% Net</span>
-            </div>
-            <div class="mt-3">
-              <div id="sandbox-net-pnl" class="text-2xl font-black text-emerald-600 font-mono">+₹9,264.40</div>
-              <span class="text-[11px] text-emerald-700 block mt-1 font-semibold font-sans">Pure In-Hand Demo Gain</span>
-            </div>
-          </div>
+        <div class="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between text-xs font-mono">
+          <span class="text-slate-400">Capital: ₹25,000</span>
+          <button onclick="openLoginModal()" class="text-brand-500 hover:text-brand-400 font-bold">Deploy &rarr;</button>
         </div>
-
-        <!-- Active Strategies Linked from Active Algos -->
-        <div class="bg-white rounded-[24px] p-5 shadow-sm border border-slate-100/80 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg font-bold border border-emerald-100 flex-shrink-0">
-              ⚡
-            </div>
-            <div>
-              <div class="flex items-center gap-2">
-                <h3 class="font-black text-slate-900 text-sm">2 Strategies Active from "Active Algos"</h3>
-                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
-                  Auto-Executing in Simulation
-                </span>
-              </div>
-              <p class="text-xs text-slate-400 mt-0.5">
-                Active Algos में चालू की गई स्ट्रैटेजीज़ (9:20 Straddle और 15-Min ORB) यहाँ ₹2L वर्चुअल कैपिटल पर रीयल-टाइम ट्रेड्स जनरेट कर रही हैं।
-              </p>
-            </div>
-          </div>
-          
-          <div class="flex items-center gap-2 self-start md:self-center flex-shrink-0">
-            <span class="text-xs font-bold text-slate-600 font-mono bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
-              Allocated: <strong class="text-slate-900">₹2,00,000</strong>
-            </span>
-            <button onclick="switchTab('tab-active-algos')" class="px-3.5 py-1.5 bg-[#3b5bfd] hover:bg-blue-600 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 active:scale-95">
-              <span>⚙️ Manage in Active Algos →</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Real-Time Demo Trades & Positions Table (Responsive Horizontal Scroll) -->
-        <div class="bg-white rounded-[28px] p-6 shadow-sm border border-slate-100/80 space-y-4">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <div class="flex items-center gap-2">
-                <h3 class="font-bold text-slate-900 text-base">Active Simulated Positions & Real-Time Demo Trades</h3>
-                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              </div>
-              <p class="text-xs text-slate-400">Live updating demo positions with exact simulated brokerage and tax deductions.</p>
-            </div>
-            <div class="flex items-center gap-2">
-              <button onclick="squareOffAllSandboxTrades()" class="px-3.5 py-2 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 whitespace-nowrap">
-                <span>🚨</span>
-                <span>Square-Off All Demo Positions</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Filter Controls Bar for High-Volume Trades (User Requested) -->
-          <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
-            <!-- Status Filter Tabs -->
-            <div class="flex items-center gap-1.5 flex-wrap">
-              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-1">Filter Status:</span>
-              <button onclick="filterSandboxTradesByStatus('ALL', this)" class="sb-status-filter-btn px-3 py-1.5 rounded-xl font-bold bg-[#3b5bfd] text-white shadow-xs transition-all">
-                All (<span id="sb-count-all">6</span>)
-              </button>
-              <button onclick="filterSandboxTradesByStatus('ACTIVE', this)" class="sb-status-filter-btn px-3 py-1.5 rounded-xl font-bold bg-white text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 border border-slate-200 flex items-center gap-1.5 transition-all">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                Active (<span id="sb-count-running">3</span>)
-              </button>
-              <button onclick="filterSandboxTradesByStatus('CLOSED', this)" class="sb-status-filter-btn px-3 py-1.5 rounded-xl font-bold bg-white text-slate-600 hover:text-slate-900 border border-slate-200 flex items-center gap-1.5 transition-all">
-                <span class="w-2 h-2 rounded-full bg-slate-400"></span>
-                Square Off (<span id="sb-count-closed">3</span>)
-              </button>
-            </div>
-
-            <!-- Strategy & Segment Dropdown Filter -->
-            <div class="flex items-center gap-2">
-              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Strategy:</span>
-              <select id="sb-strategy-filter" onchange="applySandboxFilters()" class="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="ALL">All Strategies (50+ Trades View)</option>
-                <option value="STRADDLE">9:20 AM BankNifty Short Straddle</option>
-                <option value="ORB">15-Min ORB + VWAP Breakout</option>
-                <option value="SCALPER">BankNifty CPR Scalper</option>
-                <option value="EXPIRY">Nifty Expiry Momentum Scalp</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="overflow-x-auto rounded-2xl border border-slate-200/80">
-            <table class="w-full text-left text-xs min-w-[1020px]">
-              <thead>
-                <tr class="bg-slate-50 border-b border-slate-200 text-slate-400 uppercase text-[10px] tracking-wider font-semibold">
-                  <th class="py-3.5 pl-4">Strategy & Strike / Instrument</th>
-                  <th class="py-3.5 px-3">Type</th>
-                  <th class="py-3.5 px-3 text-center">Status / Exit Reason</th>
-                  <th class="py-3.5 px-3 text-center">Lots / Qty</th>
-                  <th class="py-3.5 px-3 text-right">Entry (₹)</th>
-                  <th class="py-3.5 px-3 text-right">Exit (₹)</th>
-                  <th class="py-3.5 px-3 text-right">Current LTP (₹)</th>
-                  <th class="py-3.5 px-3 text-right">Gross Demo P&L</th>
-                  <th class="py-3.5 px-3 text-right">Taxes/Brok</th>
-                  <th class="py-3.5 px-3 text-right">Net Realized</th>
-                  <th class="py-3.5 pr-4 text-center">Action</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-100 font-mono" id="sandbox-trades-tbody">
-                <!-- Trade 1: Straddle Active -->
-                <tr id="sb-trade-row-1" data-status="ACTIVE" data-strategy="STRADDLE" class="hover:bg-slate-50/70 transition-colors">
-                  <td class="py-3.5 pl-4 font-sans font-bold text-slate-800 whitespace-nowrap">
-                    BANKNIFTY 26NOV 51200 CE/PE
-                    <div class="text-[10px] text-slate-400 font-normal">9:20 AM BankNifty Short Straddle</div>
-                  </td>
-                  <td class="py-3.5 px-3 font-sans whitespace-nowrap"><span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[10px]">SELL STRADDLE</span></td>
-                  <td class="py-3.5 px-3 text-center font-sans whitespace-nowrap" id="sb-status-badge-1">
-                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      🟢 ACTIVE
-                    </span>
-                  </td>
-                  <td class="py-3.5 px-3 text-center font-bold text-blue-600 whitespace-nowrap">1 Lot (15 Qty)</td>
-                  <td class="py-3.5 px-3 text-right text-slate-700 whitespace-nowrap">₹320.00</td>
-                  <td class="py-3.5 px-3 text-right text-slate-400 whitespace-nowrap" id="sb-exit-1">-- (Open)</td>
-                  <td class="py-3.5 px-3 text-right font-bold text-slate-900 whitespace-nowrap" id="sb-ltp-1">₹268.00</td>
-                  <td class="py-3.5 px-3 text-right font-bold text-emerald-600 whitespace-nowrap" id="sb-gross-1">+₹5,400.00</td>
-                  <td class="py-3.5 px-3 text-right text-red-500 font-bold whitespace-nowrap" id="sb-tax-1">-₹82.50</td>
-                  <td class="py-3.5 px-3 text-right font-black text-emerald-600 text-sm whitespace-nowrap" id="sb-net-1">+₹5,317.50</td>
-                  <td class="py-3.5 pr-4 text-center font-sans whitespace-nowrap">
-                    <button onclick="squareOffSandboxTrade('1')" id="sb-action-btn-1" class="px-3 py-1.5 bg-slate-100 hover:bg-red-50 hover:text-red-600 border border-slate-200 text-slate-600 rounded-xl text-[10px] font-bold transition-colors">
-                      Square-Off
-                    </button>
-                  </td>
-                </tr>
-
-                <!-- Trade 2: ORB Cash Active -->
-                <tr id="sb-trade-row-2" data-status="ACTIVE" data-strategy="ORB" class="hover:bg-slate-50/70 transition-colors">
-                  <td class="py-3.5 pl-4 font-sans font-bold text-slate-800 whitespace-nowrap">
-                    RELIANCE (EQ Cash)
-                    <div class="text-[10px] text-slate-400 font-normal">15-Min ORB + VWAP Breakout</div>
-                  </td>
-                  <td class="py-3.5 px-3 font-sans whitespace-nowrap"><span class="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 font-bold text-[10px]">INTRADAY BUY</span></td>
-                  <td class="py-3.5 px-3 text-center font-sans whitespace-nowrap" id="sb-status-badge-2">
-                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      🟢 ACTIVE
-                    </span>
-                  </td>
-                  <td class="py-3.5 px-3 text-center font-bold text-blue-600 whitespace-nowrap">1x (100 Qty)</td>
-                  <td class="py-3.5 px-3 text-right text-slate-700 whitespace-nowrap">₹1,260.00</td>
-                  <td class="py-3.5 px-3 text-right text-slate-400 whitespace-nowrap" id="sb-exit-2">-- (Open)</td>
-                  <td class="py-3.5 px-3 text-right font-bold text-slate-900 whitespace-nowrap" id="sb-ltp-2">₹1,292.50</td>
-                  <td class="py-3.5 px-3 text-right font-bold text-emerald-600 whitespace-nowrap" id="sb-gross-2">+₹3,250.00</td>
-                  <td class="py-3.5 px-3 text-right text-red-500 font-bold whitespace-nowrap" id="sb-tax-2">-₹48.20</td>
-                  <td class="py-3.5 px-3 text-right font-black text-emerald-600 text-sm whitespace-nowrap" id="sb-net-2">+₹3,201.80</td>
-                  <td class="py-3.5 pr-4 text-center font-sans whitespace-nowrap">
-                    <button onclick="squareOffSandboxTrade('2')" id="sb-action-btn-2" class="px-3 py-1.5 bg-slate-100 hover:bg-red-50 hover:text-red-600 border border-slate-200 text-slate-600 rounded-xl text-[10px] font-bold transition-colors">
-                      Square-Off
-                    </button>
-                  </td>
-                </tr>
-
-                <!-- Trade 3: CPR Scalper Active -->
-                <tr id="sb-trade-row-3" data-status="ACTIVE" data-strategy="SCALPER" class="hover:bg-slate-50/70 transition-colors">
-                  <td class="py-3.5 pl-4 font-sans font-bold text-slate-800 whitespace-nowrap">
-                    BANKNIFTY 51400 CE
-                    <div class="text-[10px] text-slate-400 font-normal">BankNifty CPR Scalper</div>
-                  </td>
-                  <td class="py-3.5 px-3 font-sans whitespace-nowrap"><span class="px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 font-bold text-[10px]">OPTION BUY</span></td>
-                  <td class="py-3.5 px-3 text-center font-sans whitespace-nowrap" id="sb-status-badge-3">
-                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      🟢 ACTIVE
-                    </span>
-                  </td>
-                  <td class="py-3.5 px-3 text-center font-bold text-blue-600 whitespace-nowrap">2 Lots (30 Qty)</td>
-                  <td class="py-3.5 px-3 text-right text-slate-700 whitespace-nowrap">₹185.00</td>
-                  <td class="py-3.5 px-3 text-right text-slate-400 whitespace-nowrap" id="sb-exit-3">-- (Open)</td>
-                  <td class="py-3.5 px-3 text-right font-bold text-slate-900 whitespace-nowrap" id="sb-ltp-3">₹212.00</td>
-                  <td class="py-3.5 px-3 text-right font-bold text-emerald-600 whitespace-nowrap" id="sb-gross-3">+₹810.00</td>
-                  <td class="py-3.5 px-3 text-right text-red-500 font-bold whitespace-nowrap" id="sb-tax-3">-₹54.90</td>
-                  <td class="py-3.5 px-3 text-right font-black text-emerald-600 text-sm whitespace-nowrap" id="sb-net-3">+₹755.10</td>
-                  <td class="py-3.5 pr-4 text-center font-sans whitespace-nowrap">
-                    <button onclick="squareOffSandboxTrade('3')" id="sb-action-btn-3" class="px-3 py-1.5 bg-slate-100 hover:bg-red-50 hover:text-red-600 border border-slate-200 text-slate-600 rounded-xl text-[10px] font-bold transition-colors">
-                      Square-Off
-                    </button>
-                  </td>
-                </tr>
-
-                <!-- Trade 4: Closed - TARGET HIT -->
-                <tr id="sb-trade-row-4" data-status="CLOSED" data-strategy="EXPIRY" class="bg-slate-50/50 hover:bg-slate-50 transition-colors opacity-85">
-                  <td class="py-3.5 pl-4 font-sans font-bold text-slate-700 whitespace-nowrap">
-                    NIFTY 24200 PE (Expiry Scalp)
-                    <div class="text-[10px] text-slate-400 font-normal">Nifty Expiry Momentum Scalp</div>
-                  </td>
-                  <td class="py-3.5 px-3 font-sans whitespace-nowrap"><span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-bold text-[10px]">OPTION BUY</span></td>
-                  <td class="py-3.5 px-3 text-center font-sans whitespace-nowrap" id="sb-status-badge-4">
-                    <div class="inline-flex flex-col items-center">
-                      <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        🏁 SQUARE OFF
-                      </span>
-                      <span class="text-[9px] font-bold text-emerald-600 mt-0.5">🎯 Target Hit</span>
-                    </div>
-                  </td>
-                  <td class="py-3.5 px-3 text-center font-bold text-slate-500 whitespace-nowrap">2 Lots (50 Qty)</td>
-                  <td class="py-3.5 px-3 text-right text-slate-500 whitespace-nowrap">₹42.50</td>
-                  <td class="py-3.5 px-3 text-right font-bold text-emerald-600 whitespace-nowrap" id="sb-exit-4">₹72.00</td>
-                  <td class="py-3.5 px-3 text-right font-bold text-slate-500 whitespace-nowrap" id="sb-ltp-4">₹72.00</td>
-                  <td class="py-3.5 px-3 text-right font-bold text-emerald-600 whitespace-nowrap">+₹1,475.00</td>
-                  <td class="py-3.5 px-3 text-right text-red-500 font-bold whitespace-nowrap">-₹55.00</td>
-                  <td class="py-3.5 px-3 text-right font-black text-emerald-600 text-sm whitespace-nowrap">+₹1,420.00</td>
-                  <td class="py-3.5 pr-4 text-center font-sans whitespace-nowrap">
-                    <span class="px-2.5 py-1 text-[10px] font-bold bg-slate-100 text-slate-500 rounded-xl border border-slate-200">
-                      Square Off ✓
-                    </span>
-                  </td>
-                </tr>
-
-                <!-- Trade 5: Closed - TRAILING SL HIT -->
-                <tr id="sb-trade-row-5" data-status="CLOSED" data-strategy="SCALPER" class="bg-slate-50/50 hover:bg-slate-50 transition-colors opacity-85">
-                  <td class="py-3.5 pl-4 font-sans font-bold text-slate-700 whitespace-nowrap">
-                    BANKNIFTY 51100 CE (CPR Scalp)
-                    <div class="text-[10px] text-slate-400 font-normal">BankNifty CPR Scalper</div>
-                  </td>
-                  <td class="py-3.5 px-3 font-sans whitespace-nowrap"><span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-bold text-[10px]">OPTION BUY</span></td>
-                  <td class="py-3.5 px-3 text-center font-sans whitespace-nowrap" id="sb-status-badge-5">
-                    <div class="inline-flex flex-col items-center">
-                      <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                        🏁 SQUARE OFF
-                      </span>
-                      <span class="text-[9px] font-bold text-blue-600 mt-0.5">🛡️ Trailing SL Hit</span>
-                    </div>
-                  </td>
-                  <td class="py-3.5 px-3 text-center font-bold text-slate-500 whitespace-nowrap">1 Lot (15 Qty)</td>
-                  <td class="py-3.5 px-3 text-right text-slate-500 whitespace-nowrap">₹940.00</td>
-                  <td class="py-3.5 px-3 text-right font-bold text-blue-600 whitespace-nowrap" id="sb-exit-5">₹982.00</td>
-                  <td class="py-3.5 px-3 text-right font-bold text-slate-500 whitespace-nowrap" id="sb-ltp-5">₹978.00</td>
-                  <td class="py-3.5 px-3 text-right font-bold text-emerald-600 whitespace-nowrap">+₹1,320.00</td>
-                  <td class="py-3.5 px-3 text-right text-red-500 font-bold whitespace-nowrap">-₹60.00</td>
-                  <td class="py-3.5 px-3 text-right font-black text-emerald-600 text-sm whitespace-nowrap">+₹1,260.00</td>
-                  <td class="py-3.5 pr-4 text-center font-sans whitespace-nowrap">
-                    <span class="px-2.5 py-1 text-[10px] font-bold bg-slate-100 text-slate-500 rounded-xl border border-slate-200">
-                      Square Off ✓
-                    </span>
-                  </td>
-                </tr>
-
-                <!-- Trade 6: Closed - SL HIT -->
-                <tr id="sb-trade-row-6" data-status="CLOSED" data-strategy="ORB" class="bg-slate-50/50 hover:bg-slate-50 transition-colors opacity-85">
-                  <td class="py-3.5 pl-4 font-sans font-bold text-slate-700 whitespace-nowrap">
-                    TATASTEEL (EQ Cash Breakout)
-                    <div class="text-[10px] text-slate-400 font-normal">15-Min ORB + VWAP Breakout</div>
-                  </td>
-                  <td class="py-3.5 px-3 font-sans whitespace-nowrap"><span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-bold text-[10px]">INTRADAY BUY</span></td>
-                  <td class="py-3.5 px-3 text-center font-sans whitespace-nowrap" id="sb-status-badge-6">
-                    <div class="inline-flex flex-col items-center">
-                      <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                        🏁 SQUARE OFF
-                      </span>
-                      <span class="text-[9px] font-bold text-rose-600 mt-0.5">🛑 SL Hit</span>
-                    </div>
-                  </td>
-                  <td class="py-3.5 px-3 text-center font-bold text-slate-500 whitespace-nowrap">100 Qty</td>
-                  <td class="py-3.5 px-3 text-right text-slate-500 whitespace-nowrap">₹172.00</td>
-                  <td class="py-3.5 px-3 text-right font-bold text-rose-600 whitespace-nowrap" id="sb-exit-6">₹165.00</td>
-                  <td class="py-3.5 px-3 text-right font-bold text-slate-500 whitespace-nowrap" id="sb-ltp-6">₹164.50</td>
-                  <td class="py-3.5 px-3 text-right font-bold text-rose-600 whitespace-nowrap">-₹700.00</td>
-                  <td class="py-3.5 px-3 text-right text-red-500 font-bold whitespace-nowrap">-₹42.00</td>
-                  <td class="py-3.5 px-3 text-right font-black text-rose-600 text-sm whitespace-nowrap">-₹742.00</td>
-                  <td class="py-3.5 pr-4 text-center font-sans whitespace-nowrap">
-                    <span class="px-2.5 py-1 text-[10px] font-bold bg-slate-100 text-slate-500 rounded-xl border border-slate-200">
-                      Square Off ✓
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
       </div>
 
-      <!-- TAB 4: ALL 7 STRATEGIES -->
-      <div id="tab-all-strategies" class="tab-content space-y-6">
-        <div class="bg-white rounded-[28px] p-6 shadow-sm border border-slate-100/80 space-y-5">
+      <!-- 05 Nifty Bull Surge CE -->
+      <div class="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 card-glow transition-all flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] uppercase font-mono font-bold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Nifty CE</span>
+            <span class="text-xs font-mono font-bold text-emerald-400">Win: 58.2%</span>
+          </div>
+          <h3 class="text-lg font-bold text-white mt-4">5. Nifty Bull Surge</h3>
+          <p class="text-xs text-slate-400 mt-2">Directional Nifty Call Options scalper with delta filtering and instant momentum targets.</p>
+        </div>
+        <div class="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between text-xs font-mono">
+          <span class="text-slate-400">Capital: ₹30,000</span>
+          <button onclick="openLoginModal()" class="text-brand-500 hover:text-brand-400 font-bold">Deploy &rarr;</button>
+        </div>
+      </div>
+
+      <!-- 06 Nifty Bear Hunt PE -->
+      <div class="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 card-glow transition-all flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] uppercase font-mono font-bold px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20">Nifty PE</span>
+            <span class="text-xs font-mono font-bold text-emerald-400">Win: 59.3%</span>
+          </div>
+          <h3 class="text-lg font-bold text-white mt-4">6. Nifty Bear Hunt</h3>
+          <p class="text-xs text-slate-400 mt-2">Nifty Put Options buyer capturing breakdown volatility with tight risk trailing.</p>
+        </div>
+        <div class="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between text-xs font-mono">
+          <span class="text-slate-400">Capital: ₹30,000</span>
+          <button onclick="openLoginModal()" class="text-brand-500 hover:text-brand-400 font-bold">Deploy &rarr;</button>
+        </div>
+      </div>
+
+      <!-- 07 Sensex Zero-Hero -->
+      <div class="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 card-glow transition-all flex flex-col justify-between md:col-span-2 lg:col-span-3">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 class="text-lg font-black text-slate-900">All 7 Algorithmic Strategies</h2>
-            <p class="text-xs text-slate-400 mt-0.5">
-              Verified institutional strategies available for deployment on DhanHQ and Zerodha.
-            </p>
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] uppercase font-mono font-bold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">Expiry Day Gamma</span>
+              <span class="text-xs font-mono font-bold text-emerald-400">Win: 55.7% (Asymmetric 1:3 RR)</span>
+            </div>
+            <h3 class="text-xl font-bold text-white mt-3">7. Sensex Expiry Zero-Hero Gamma</h3>
+            <p class="text-xs text-slate-400 mt-1 max-w-2xl">Triggers exclusively on weekly expiry afternoons (01:15 PM - 03:00 PM) targeting 2x to 5x premium expansion on OTM contracts with capped ₹15,000 risk.</p>
           </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div class="p-5 rounded-2xl border border-blue-200 bg-blue-50/30 flex flex-col justify-between">
-              <div>
-                <span class="text-[10px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded-full border">Equity Cash</span>
-                <h4 class="font-bold text-slate-900 text-sm mt-3">15-Min ORB + VWAP Breakout</h4>
-                <p class="text-[11px] text-slate-400 mt-1">High-momentum breakout with volume confirmation</p>
-                <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-mono">
-                  <span>Min: ₹50,000</span>
-                  <span class="text-emerald-600 font-bold">Win: 71.4%</span>
-                </div>
-              </div>
-              <button onclick="showToast('Strategy already active in My Strategies', 'info'); switchTab('strategies');" class="mt-4 w-full py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-xl text-xs font-bold transition-all cursor-pointer">✓ Added in My Strategies</button>
-            </div>
-
-            <div class="p-5 rounded-2xl border border-blue-200 bg-blue-50/30 flex flex-col justify-between">
-              <div>
-                <span class="text-[10px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded-full border">Option Selling</span>
-                <h4 class="font-bold text-slate-900 text-sm mt-3">9:20 AM BankNifty Short Straddle</h4>
-                <p class="text-[11px] text-slate-400 mt-1">Delta-neutral decay capture with individual 25% SL</p>
-                <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-mono">
-                  <span>Min: ₹1,50,000</span>
-                  <span class="text-emerald-600 font-bold">Win: 68.8%</span>
-                </div>
-              </div>
-              <button onclick="showToast('Strategy already active in My Strategies', 'info'); switchTab('strategies');" class="mt-4 w-full py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-xl text-xs font-bold transition-all cursor-pointer">✓ Added in My Strategies</button>
-            </div>
-
-            <div class="p-5 rounded-2xl border border-slate-200 bg-white flex flex-col justify-between">
-              <div>
-                <span class="text-[10px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded-full border">Option Buying</span>
-                <h4 class="font-bold text-slate-900 text-sm mt-3">BankNifty CPR Scalper</h4>
-                <p class="text-[11px] text-slate-400 mt-1">Central pivot range intraday scalp for impulse moves</p>
-                <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-mono">
-                  <span>Min: ₹50,000</span>
-                  <span class="text-emerald-600 font-bold">Win: 64.2%</span>
-                </div>
-              </div>
-              <button onclick="this.innerHTML='✓ Added in My Strategies'; this.className='mt-4 w-full py-2 bg-emerald-100 text-emerald-800 rounded-xl text-xs font-bold transition-all'; showToast('BankNifty CPR Scalper added to Active Algos!', 'success');" class="mt-4 w-full py-2 bg-[#3b5bfd] hover:bg-blue-600 active:scale-95 text-white rounded-xl text-xs font-bold shadow transition-all cursor-pointer">+ Add to My Strategies</button>
-            </div>
-          </div>
+          <button onclick="openLoginModal()" class="px-6 py-3 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm whitespace-nowrap shadow-lg">
+            Activate Expiry Algo &rarr;
+          </button>
         </div>
       </div>
+    </div>
+  </section>
 
-      <!-- TAB 5: TRADE LEDGER -->
-      <div id="tab-trade-ledger" class="tab-content space-y-6">
-        <div class="bg-white rounded-[28px] p-6 shadow-sm border border-slate-100/80 space-y-4">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h3 class="font-bold text-slate-900 text-base">Trade Ledger</h3>
-              <p class="text-xs text-slate-400">Default view: Last 7 Days trades. Toggle below for full month history.</p>
-            </div>
-            
-            <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-2xl text-xs font-bold">
-              <button onclick="filterLedger('7days')" id="btn-7days" class="px-3 py-1.5 rounded-xl bg-white text-slate-900 shadow">
-                Last 7 Days (Default)
-              </button>
-              <button onclick="filterLedger('fullmonth')" id="btn-fullmonth" class="px-3 py-1.5 rounded-xl text-slate-500 hover:text-slate-900">
-                Full Month (Nov)
-              </button>
-            </div>
-          </div>
+  <!-- FOOTER -->
+  <footer class="border-t border-slate-800/80 py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center text-xs text-slate-500">
+    <div class="flex items-center justify-center gap-2 mb-3">
+      <span class="text-slate-300 font-bold">Strike Smart Algo Suite</span>
+      <span>&bull;</span>
+      <span>SEBI Algorithmic Compliance Architecture</span>
+    </div>
+    <p>Algorithmic trading involves financial risk. Past backtested performance is not guarantee of future market returns.</p>
+    <p class="mt-2">&copy; 2026 Strike Smart Systems. All rights reserved.</p>
+  </footer>
 
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
-              <thead>
-                <tr class="border-b border-slate-100 text-slate-400 uppercase text-[10px] tracking-wider font-semibold">
-                  <th class="pb-3 pl-2">Date</th>
-                  <th class="pb-3">Strategies</th>
-                  <th class="pb-3 text-center">Trades</th>
-                  <th class="pb-3 text-right">Gross P&L</th>
-                  <th class="pb-3 text-right">Brokerage</th>
-                  <th class="pb-3 text-right">Net Realized</th>
-                  <th class="pb-3 text-center pr-2">Status</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-100 font-mono" id="ledger-body">
-                <tr>
-                  <td class="py-3 pl-2 font-sans font-bold text-slate-800">24 Nov 2026</td>
-                  <td class="py-3 font-sans text-slate-600">9:20 Straddle + 15m ORB</td>
-                  <td class="py-3 text-center font-bold">2</td>
-                  <td class="py-3 text-right font-bold text-emerald-600">+₹5,120</td>
-                  <td class="py-3 text-right text-red-500 font-bold">-₹100</td>
-                  <td class="py-3 text-right font-black text-emerald-600">+₹5,020</td>
-                  <td class="py-3 text-center pr-2 font-sans"><span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[10px]">WIN</span></td>
-                </tr>
-                <tr>
-                  <td class="py-3 pl-2 font-sans font-bold text-slate-800">21 Nov 2026</td>
-                  <td class="py-3 font-sans text-slate-600">15-Min ORB Cash</td>
-                  <td class="py-3 text-center font-bold">1</td>
-                  <td class="py-3 text-right font-bold text-emerald-600">+₹3,200</td>
-                  <td class="py-3 text-right text-red-500 font-bold">-₹40</td>
-                  <td class="py-3 text-right font-black text-emerald-600">+₹3,160</td>
-                  <td class="py-3 text-center pr-2 font-sans"><span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[10px]">WIN</span></td>
-                </tr>
-                <tr>
-                  <td class="py-3 pl-2 font-sans font-bold text-slate-800">20 Nov 2026</td>
-                  <td class="py-3 font-sans text-slate-600">9:20 Straddle</td>
-                  <td class="py-3 text-center font-bold">2</td>
-                  <td class="py-3 text-right font-bold text-red-500">-₹2,100</td>
-                  <td class="py-3 text-right text-red-500 font-bold">-₹80</td>
-                  <td class="py-3 text-right font-black text-red-500">-₹2,180</td>
-                  <td class="py-3 text-center pr-2 font-sans"><span class="px-2 py-0.5 rounded-full bg-red-50 text-red-600 font-bold text-[10px]">LOSS</span></td>
-                </tr>
-                <tr>
-                  <td class="py-3 pl-2 font-sans font-bold text-slate-800">19 Nov 2026</td>
-                  <td class="py-3 font-sans text-slate-600">Crude Oil Momentum</td>
-                  <td class="py-3 text-center font-bold">1</td>
-                  <td class="py-3 text-right font-bold text-emerald-600">+₹4,500</td>
-                  <td class="py-3 text-right text-red-500 font-bold">-₹60</td>
-                  <td class="py-3 text-right font-black text-emerald-600">+₹4,440</td>
-                  <td class="py-3 text-center pr-2 font-sans"><span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[10px]">WIN</span></td>
-                </tr>
-                <tr>
-                  <td class="py-3 pl-2 font-sans font-bold text-slate-800">18 Nov 2026</td>
-                  <td class="py-3 font-sans text-slate-600">9:20 Straddle + 15m ORB</td>
-                  <td class="py-3 text-center font-bold">2</td>
-                  <td class="py-3 text-right font-bold text-emerald-600">+₹6,800</td>
-                  <td class="py-3 text-right text-red-500 font-bold">-₹80</td>
-                  <td class="py-3 text-right font-black text-emerald-600">+₹6,720</td>
-                  <td class="py-3 text-center pr-2 font-sans"><span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[10px]">WIN</span></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+  <!-- LOGIN / SIGN IN MODAL -->
+  <div id="login-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+    <div class="relative w-full max-w-md p-8 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl">
+      <!-- Close Button -->
+      <button onclick="closeLoginModal()" class="absolute top-6 right-6 text-slate-400 hover:text-white">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+
+      <div class="text-center mb-6">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center mx-auto shadow-lg shadow-brand-500/30 mb-3">
+          <span class="text-white font-black text-2xl">⚡</span>
         </div>
+        <h3 class="text-2xl font-extrabold text-white">Access Dashboard</h3>
+        <p class="text-xs text-slate-400 mt-1">Sign in to manage live algos & track execution</p>
       </div>
 
-    </main>
+      <!-- 1-Click Instant Demo Login (Recommended) -->
+      <button onclick="loginAsGuest()" class="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-bold text-sm shadow-lg shadow-emerald-500/25 active:scale-95 transition-all flex items-center justify-center gap-2 mb-4">
+        <span>⚡ 1-Click Demo / Guest Login</span>
+      </button>
+
+      <div class="flex items-center gap-3 my-4">
+        <div class="h-px bg-slate-800 flex-1"></div>
+        <span class="text-[11px] font-mono text-slate-500 uppercase">Or Member Login</span>
+        <div class="h-px bg-slate-800 flex-1"></div>
+      </div>
+
+      <form onsubmit="handleFormLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Email / Client ID</label>
+          <input type="text" id="login-email" placeholder="you@strikesmart.in or Dhan ID" value="trader@strikesmart.in" required class="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">PIN / Password</label>
+          <input type="password" id="login-password" placeholder="••••••••" value="••••••••" required class="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500">
+        </div>
+        <div class="flex items-center justify-between text-xs text-slate-400">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked class="rounded bg-slate-950 border-slate-800 text-brand-500 focus:ring-0">
+            <span>Remember Me</span>
+          </label>
+          <a href="#" onclick="alert('Demo credentials pre-filled! Click Launch below.')" class="text-brand-500 hover:underline">Forgot PIN?</a>
+        </div>
+        <button type="submit" class="w-full py-3.5 px-4 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm shadow-lg shadow-brand-500/25 active:scale-95 transition-all">
+          Launch Live Dashboard &rarr;
+        </button>
+      </form>
+    </div>
   </div>
-</div>
 
   <script>
-    // Tab switching
-    function switchTab(tabId, element) {
-      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-      const target = document.getElementById(tabId);
-      if (target) {
-        target.classList.add('active');
-      }
-
-      document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.classList.remove('bg-[#3b5bfd]', 'text-white', 'shadow-lg', 'shadow-blue-500/30');
-        btn.classList.add('text-slate-500', 'hover:text-slate-800', 'hover:bg-slate-50');
-      });
-
-      document.querySelectorAll('.header-tab-btn').forEach(btn => {
-        btn.classList.remove('bg-[#3b5bfd]', 'text-white', 'shadow');
-        btn.classList.add('text-slate-500', 'hover:text-slate-800');
-      });
-
-      if (element) {
-        element.classList.add('bg-[#3b5bfd]', 'text-white');
-        element.classList.remove('text-slate-500');
-      }
-
-      const titles = {
-        'tab-overview': 'Dashboard',
-        'tab-active-algos': 'Active Algos',
-        'tab-my-strategies': 'My Strategies',
-        'tab-sandbox-engine': 'Sandbox Engine',
-        'tab-all-strategies': 'All Strategies',
-        'tab-trade-ledger': 'Trade Ledger'
-      };
-      if (titles[tabId]) {
-        const titleEl = document.getElementById('page-title');
-        if (titleEl) titleEl.innerText = titles[tabId];
-        const mobTitle = document.getElementById('mobile-current-tab-title');
-        if (mobTitle) mobTitle.innerText = titles[tabId];
-      }
-
-      // Close mobile drawer and update quick tab pills
-      toggleMobileSidebar(false);
-      syncMobileQuickTabs(tabId);
-    }
-
-    // Mobile Sidebar Drawer Controller
-    function toggleMobileSidebar(open) {
-      const sidebar = document.getElementById('main-sidebar');
-      const backdrop = document.getElementById('sidebar-backdrop');
-      if (!sidebar || !backdrop) return;
-      if (open) {
-        sidebar.classList.remove('-translate-x-full');
-        sidebar.classList.add('translate-x-0');
-        backdrop.classList.remove('hidden');
-      } else {
-        sidebar.classList.add('-translate-x-full');
-        sidebar.classList.remove('translate-x-0');
-        backdrop.classList.add('hidden');
-      }
-    }
-
-    // Sync Mobile Horizontal Quick Tab Indicators
-    function syncMobileQuickTabs(tabId) {
-      document.querySelectorAll('.mobile-q-tab').forEach(b => {
-        if (b.getAttribute('data-tab') === tabId) {
-          b.classList.add('bg-[#3b5bfd]', 'text-white', 'shadow-sm');
-          b.classList.remove('bg-white', 'text-slate-600');
-        } else {
-          b.classList.remove('bg-[#3b5bfd]', 'text-white', 'shadow-sm');
-          b.classList.add('bg-white', 'text-slate-600');
-        }
-      });
-    }
-
-    // ==========================================
-    // BROKERAGE & STATUTORY CHARGES MODAL ENGINE
-    // ==========================================
-    function openBrokerageModal(segment, lots, buy, sell) {
-      const modal = document.getElementById('brokerage-modal');
-      if (!modal) return;
-      modal.classList.remove('hidden');
-
-      if (segment) {
-        if (segment === 'OPTIONS') segment = 'BANKNIFTY_OPT';
-        if (segment === 'FUTURES') segment = 'NIFTY_FUT';
-        document.getElementById('calc-segment').value = segment;
-      }
-      if (lots) document.getElementById('calc-lots').value = lots;
-      if (buy) document.getElementById('calc-buy').value = buy;
-      if (sell) document.getElementById('calc-sell').value = sell;
-
-      recalcChargesModal();
-    }
-
-    function closeBrokerageModal() {
-      const modal = document.getElementById('brokerage-modal');
-      if (modal) modal.classList.add('hidden');
-    }
-
-    function handleBrokerageBackdropClick(e) {
-      if (e.target.id === 'brokerage-modal') closeBrokerageModal();
-    }
-
-    function adjustCalcLots(delta) {
-      const input = document.getElementById('calc-lots');
-      let val = (parseInt(input.value) || 1) + delta;
-      if (val < 1) val = 1;
-      if (val > 50) val = 50;
-      input.value = val;
-      recalcChargesModal();
-    }
-
-    function setCalcLotsPreset(lots) {
-      document.getElementById('calc-lots').value = lots;
-      recalcChargesModal();
-    }
-
-    function recalcChargesModal() {
-      const segment = document.getElementById('calc-segment').value;
-      const lots = parseInt(document.getElementById('calc-lots').value) || 1;
-      const buyPrice = parseFloat(document.getElementById('calc-buy').value) || 0;
-      const sellPrice = parseFloat(document.getElementById('calc-sell').value) || 0;
-
-      let lotSize = 15;
-      let isOption = false;
-      let isFutures = false;
-      let isCash = false;
-      let isMcx = false;
-
-      // Bound to official NSE & MCX lot sizes
-      if (segment === 'BANKNIFTY_OPT' || segment === 'OPTIONS') {
-        lotSize = 15; // BankNifty Option Lot Size
-        isOption = true;
-      } else if (segment === 'NIFTY_OPT') {
-        lotSize = 25; // Nifty Option Lot Size
-        isOption = true;
-      } else if (segment === 'FINNIFTY_OPT') {
-        lotSize = 25; // FinNifty Option Lot Size
-        isOption = true;
-      } else if (segment === 'BANKNIFTY_FUT') {
-        lotSize = 15; // BankNifty Futures Lot Size
-        isFutures = true;
-      } else if (segment === 'NIFTY_FUT' || segment === 'FUTURES') {
-        lotSize = 25; // Nifty Futures Lot Size
-        isFutures = true;
-      } else if (segment === 'CASH') {
-        lotSize = 100; // Equity Cash Unit
-        isCash = true;
-      } else if (segment === 'MCX') {
-        lotSize = 100; // MCX Crude Oil
-        isMcx = true;
-      }
-
-      const totalQty = lots * lotSize;
-      const buyTurnover = totalQty * buyPrice;
-      const sellTurnover = totalQty * sellPrice;
-      const totalTurnover = buyTurnover + sellTurnover;
-      const grossProfit = (sellPrice - buyPrice) * totalQty;
-
-      // Brokerage: flat ₹20 per executed leg = ₹40 for round trip
-      let brokerage = 40;
-      let stt = 0;
-      let exchange = 0;
-      let gst = 0;
-      let sebi = 0;
-      let stamp = 0;
-
-      if (isOption) {
-        // Options: STT is 0.1% on Sell Premium Turnover
-        stt = sellTurnover * 0.001;
-        // Exchange fee: 0.03503% on Total Premium Turnover
-        exchange = totalTurnover * 0.0003503;
-        // SEBI: ₹10/crore on turnover
-        sebi = totalTurnover * 0.000001;
-        // Stamp duty: ₹300/crore on Buy side
-        stamp = buyTurnover * 0.00003;
-        // GST: 18% on (Brokerage + Exchange + SEBI)
-        gst = (brokerage + exchange + sebi) * 0.18;
-      } else if (isFutures) {
-        // Futures: STT is 0.02% on Sell Turnover
-        stt = sellTurnover * 0.0002;
-        // Exchange fee: 0.00173% on Total Turnover
-        exchange = totalTurnover * 0.0000173;
-        sebi = totalTurnover * 0.000001;
-        stamp = buyTurnover * 0.00002;
-        gst = (brokerage + exchange + sebi) * 0.18;
-      } else if (isCash) {
-        // Cash: Brokerage is min(₹40, 0.03% on turnover)
-        brokerage = Math.min(40, totalTurnover * 0.0003);
-        // STT: 0.025% on Sell side only for intraday
-        stt = sellTurnover * 0.00025;
-        exchange = totalTurnover * 0.0000297;
-        sebi = totalTurnover * 0.000001;
-        stamp = buyTurnover * 0.00003;
-        gst = (brokerage + exchange + sebi) * 0.18;
-      } else if (isMcx) {
-        stt = sellTurnover * 0.0001; // CTT
-        exchange = totalTurnover * 0.000026;
-        sebi = totalTurnover * 0.000001;
-        stamp = buyTurnover * 0.00002;
-        gst = (brokerage + exchange + sebi) * 0.18;
-      }
-
-      const totalDeductions = brokerage + stt + exchange + gst + sebi + stamp;
-      const netProfit = grossProfit - totalDeductions;
-      const breakEvenPts = totalQty > 0 ? (totalDeductions / totalQty).toFixed(2) : '0.00';
-
-      document.getElementById('res-qty').innerText = `${totalQty} Qty (${lots} Lots)`;
-      document.getElementById('res-turnover').innerText = `₹${totalTurnover.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-      
-      const grossEl = document.getElementById('res-gross');
-      grossEl.innerText = `${grossProfit >= 0 ? '+' : ''}₹${grossProfit.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-      grossEl.className = grossProfit >= 0 ? 'font-bold text-emerald-600' : 'font-bold text-red-500';
-
-      document.getElementById('res-brokerage').innerText = `-₹${brokerage.toFixed(2)}`;
-      document.getElementById('res-stt').innerText = `-₹${stt.toFixed(2)}`;
-      document.getElementById('res-exchange').innerText = `-₹${exchange.toFixed(2)}`;
-      document.getElementById('res-gst').innerText = `-₹${gst.toFixed(2)}`;
-      document.getElementById('res-stamp').innerText = `-₹${(sebi + stamp).toFixed(2)}`;
-      document.getElementById('res-total-deductions').innerText = `-₹${totalDeductions.toFixed(2)}`;
-
-      const netEl = document.getElementById('res-net-profit');
-      netEl.innerText = `${netProfit >= 0 ? '+' : ''}₹${netProfit.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-      netEl.className = netProfit >= 0 ? 'text-emerald-600 font-black text-base' : 'text-red-500 font-black text-base';
-
-      document.getElementById('res-breakeven').innerText = `+${breakEvenPts} pts movement`;
-    }
-
-    // ==========================================
-    // ACTIVE ALGOS DYNAMIC MULTI-LOT CALCULATIONS
-    // ==========================================
-    function adjustActiveCardLots(cardId, delta) {
-      const input = document.getElementById(`${cardId}-lots-input`);
-      let val = (parseInt(input.value) || 1) + delta;
-      if (val < 1) val = 1;
-      if (val > 50) val = 50;
-      input.value = val;
-      calcActiveCardDeductions(cardId);
-    }
-
-    function setActiveCardLotsPreset(cardId, lots) {
-      document.getElementById(`${cardId}-lots-input`).value = lots;
-      calcActiveCardDeductions(cardId);
-    }
-
-    function calcActiveCardDeductions(cardId) {
-      const lots = parseInt(document.getElementById(`${cardId}-lots-input`).value) || 1;
-
-      if (cardId === 'algo-1') {
-        // Equity Cash: 100 shares per lot, Base Margin: ₹50,000 / lot
-        const qty = lots * 100;
-        const margin = lots * 50000;
-        // Cash deductions: flat ₹40 + 0.025% STT + exchange + 18% GST approx ₹40 + ₹32/lot
-        const taxes = 40 + (lots * 32);
-        const grossReturn = lots * 16650;
-        const lossTrailing = lots * 2500;
-        const netTakeHome = grossReturn - taxes;
-
-        document.getElementById('algo-1-qty-display').innerText = `${qty} Qty`;
-        document.getElementById('algo-1-margin-display').innerText = `₹${margin.toLocaleString('en-IN')}`;
-        document.getElementById('algo-1-gross-display').innerText = `+₹${grossReturn.toLocaleString('en-IN')}`;
-        const lossEl = document.getElementById('algo-1-loss-display');
-        if (lossEl) lossEl.innerText = `-₹${lossTrailing.toLocaleString('en-IN')}`;
-        document.getElementById('algo-1-taxes-display').innerText = `-₹${taxes.toLocaleString('en-IN')}`;
-        const netEl1 = document.getElementById('algo-1-net-display');
-        if (netEl1) netEl1.innerText = `+₹${netTakeHome.toLocaleString('en-IN')}`;
-      } else if (cardId === 'algo-2') {
-        // Option Selling: 15 Qty per lot, Base Margin: ₹1,50,000 / lot
-        const qty = lots * 15;
-        const margin = lots * 150000;
-        // Options deductions: flat ₹40 round trip + STT 0.1% on premium turnover + exchange + GST
-        const taxes = 40 + (lots * 82.5);
-        const grossReturn = lots * 26900;
-        const lossTrailing = lots * 4200;
-        const netTakeHome = grossReturn - taxes;
-
-        document.getElementById('algo-2-qty-display').innerText = `${qty} Qty`;
-        document.getElementById('algo-2-margin-display').innerText = `₹${margin.toLocaleString('en-IN')}`;
-        document.getElementById('algo-2-gross-display').innerText = `+₹${grossReturn.toLocaleString('en-IN')}`;
-        const lossEl = document.getElementById('algo-2-loss-display');
-        if (lossEl) lossEl.innerText = `-₹${lossTrailing.toLocaleString('en-IN')}`;
-        document.getElementById('algo-2-taxes-display').innerText = `-₹${taxes.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
-        const netEl2 = document.getElementById('algo-2-net-display');
-        if (netEl2) netEl2.innerText = `+₹${netTakeHome.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
-      } else if (cardId === 'algo-3') {
-        // Index Futures: 25 Qty per lot, Base Margin: ₹1,20,000 / lot
-        const qty = lots * 25;
-        const margin = lots * 120000;
-        // Futures deductions: flat ₹40 round trip + STT 0.02% on turnover + exchange + GST
-        const taxes = 40 + (lots * 64.8);
-        const grossReturn = lots * 18500;
-        const lossTrailing = lots * 3800;
-        const netTakeHome = grossReturn - taxes;
-
-        document.getElementById('algo-3-qty-display').innerText = `${qty} Qty`;
-        document.getElementById('algo-3-margin-display').innerText = `₹${margin.toLocaleString('en-IN')}`;
-        document.getElementById('algo-3-gross-display').innerText = `+₹${grossReturn.toLocaleString('en-IN')}`;
-        const lossEl = document.getElementById('algo-3-loss-display');
-        if (lossEl) lossEl.innerText = `-₹${lossTrailing.toLocaleString('en-IN')}`;
-        document.getElementById('algo-3-taxes-display').innerText = `-₹${taxes.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
-        const netEl3 = document.getElementById('algo-3-net-display');
-        if (netEl3) netEl3.innerText = `+₹${netTakeHome.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
-      }
-    }
-
-    // ==========================================
-    // MY STRATEGIES TABLE LOT MULTIPLIER CONTROLS
-    // ==========================================
-    const tableLotState = {
-      'row-1': { lots: 1, base: 50000, unit: 'x' },
-      'row-2': { lots: 1, base: 150000, unit: 'Lot' },
-      'row-3': { lots: 1, base: 120000, unit: 'Lot' }
-    };
-
-    function adjustTableLots(rowId, delta, baseMargin, unit) {
-      if (!tableLotState[rowId]) tableLotState[rowId] = { lots: 1, base: baseMargin, unit: unit };
-      let lots = tableLotState[rowId].lots + delta;
-      if (lots < 1) lots = 1;
-      if (lots > 50) lots = 50;
-      tableLotState[rowId].lots = lots;
-
-      const totalMargin = lots * baseMargin;
-      const displayMargin = totalMargin >= 100000 ? `₹${(totalMargin / 100000).toFixed(1)}L` : `₹${(totalMargin / 1000)}k`;
-      const label = unit === 'x' ? `${lots}x (${displayMargin})` : `${lots} ${lots > 1 ? 'Lots' : 'Lot'} (${displayMargin})`;
-      
-      document.getElementById(`${rowId}-lots-text`).innerText = label;
-    }
-
-    // ==========================================
-    // SANDBOX ENGINE SELECTION & MULTI-LOT STATS
-    // ==========================================
-    const sandboxConfig = {
-      '1': { selected: true, lots: 1, lotSize: 15, marginPerLot: 150000, taxPerLot: 82.5, grossPerLot: 5400, name: '9:20 Straddle' },
-      '2': { selected: true, lots: 1, lotSize: 100, marginPerLot: 50000, taxPerLot: 48.2, grossPerLot: 3250, name: '15-Min ORB' },
-      '3': { selected: false, lots: 1, lotSize: 25, marginPerLot: 120000, taxPerLot: 64.8, grossPerLot: 4100, name: 'Nifty Futures' },
-      '4': { selected: false, lots: 2, lotSize: 15, marginPerLot: 12500, taxPerLot: 27.4, grossPerLot: 810, name: 'CPR Scalper' },
-      '5': { selected: false, lots: 1, lotSize: 100, marginPerLot: 180000, taxPerLot: 75.2, grossPerLot: 4500, name: 'Crude Momentum' },
-      '6': { selected: false, lots: 4, lotSize: 25, marginPerLot: 3750, taxPerLot: 12.3, grossPerLot: 1200, name: 'FinNifty Expiry' }
-    };
-
-    function toggleSandboxStratSelection(id) {
-      const chk = document.getElementById(`sb-chk-${id}`);
-      const card = document.getElementById(`sb-strat-card-${id}`);
-      sandboxConfig[id].selected = chk.checked;
-
-      if (chk.checked) {
-        card.classList.remove('border-slate-200', 'bg-white');
-        card.classList.add('border-2', 'border-emerald-300', 'bg-emerald-50/20');
-      } else {
-        card.classList.remove('border-2', 'border-emerald-300', 'bg-emerald-50/20');
-        card.classList.add('border-slate-200', 'bg-white');
-      }
-      recalculateSandboxTotals();
-    }
-
-    function adjustSandboxLot(id, delta) {
-      const input = document.getElementById(`sb-lots-${id}`);
-      let lots = (parseInt(input.value) || 1) + delta;
-      if (lots < 1) lots = 1;
-      if (lots > 50) lots = 50;
-      input.value = lots;
-      sandboxConfig[id].lots = lots;
-      calcSandboxStratStats(id);
-    }
-
-    function setSandboxLotPreset(id, lots) {
-      document.getElementById(`sb-lots-${id}`).value = lots;
-      sandboxConfig[id].lots = lots;
-      calcSandboxStratStats(id);
-    }
-
-    function calcSandboxStratStats(id) {
-      const lots = parseInt(document.getElementById(`sb-lots-${id}`).value) || 1;
-      sandboxConfig[id].lots = lots;
-      const cfg = sandboxConfig[id];
-
-      const totalQty = lots * cfg.lotSize;
-      const totalMargin = lots * cfg.marginPerLot;
-      const totalTaxes = 40 + (lots * cfg.taxPerLot);
-
-      const qtyEl = document.getElementById(`sb-qty-${id}`);
-      if (qtyEl) qtyEl.innerText = `${totalQty} ${id === '5' ? 'bbl' : (id === '2' ? 'Shares' : 'Qty')}`;
-      
-      const marginEl = document.getElementById(`sb-margin-${id}`);
-      if (marginEl) marginEl.innerText = `₹${totalMargin.toLocaleString('en-IN')}`;
-
-      const taxesEl = document.getElementById(`sb-taxes-${id}`);
-      if (taxesEl) taxesEl.innerText = `-₹${totalTaxes.toFixed(2)}`;
-
-      recalculateSandboxTotals();
-    }
-
-    function selectAllSandboxStrats(select) {
-      Object.keys(sandboxConfig).forEach(id => {
-        const chk = document.getElementById(`sb-chk-${id}`);
-        if (chk) {
-          chk.checked = select;
-          toggleSandboxStratSelection(id);
-        }
-      });
-    }
-
-    function recalculateSandboxTotals() {
-      let selectedCount = 0;
-      let totalMargin = 0;
-      let totalTaxes = 0;
-      let totalGross = 0;
-
-      Object.keys(sandboxConfig).forEach(id => {
-        const cfg = sandboxConfig[id];
-        if (cfg.selected) {
-          selectedCount++;
-          totalMargin += cfg.lots * cfg.marginPerLot;
-          totalTaxes += 40 + (cfg.lots * cfg.taxPerLot);
-          totalGross += cfg.lots * cfg.grossPerLot;
-        }
-      });
-
-      document.getElementById('selected-strats-count').innerText = selectedCount;
-      document.getElementById('selected-margin-total').innerText = `₹${totalMargin.toLocaleString('en-IN')}`;
-      document.getElementById('selected-taxes-total').innerText = `-₹${totalTaxes.toFixed(2)}`;
-
-      // Update Sandbox Stat Cards
-      const usedPct = Math.min(100, Math.round((totalMargin / 200000) * 100));
-      const freeMargin = Math.max(0, 200000 - totalMargin);
-      const netPnL = totalGross - totalTaxes;
-
-      document.getElementById('sandbox-margin-pct').innerText = `${usedPct}% Used`;
-      document.getElementById('sandbox-margin-used').innerText = `₹${totalMargin.toLocaleString('en-IN')}`;
-      document.getElementById('sandbox-margin-free').innerText = `₹${freeMargin.toLocaleString('en-IN')}`;
-      document.getElementById('sandbox-gross-pnl').innerText = `+₹${totalGross.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-      document.getElementById('sandbox-deductions').innerText = `-₹${totalTaxes.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-      document.getElementById('sandbox-net-pnl').innerText = `+₹${netPnL.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    }
-
-    // ==========================================
-    // SANDBOX SIMULATED EXECUTION ENGINE
-    // ==========================================
-    function executeSandboxTrades() {
-      let selectedCount = 0;
-      Object.keys(sandboxConfig).forEach(id => {
-        if (sandboxConfig[id].selected) selectedCount++;
-      });
-
-      if (selectedCount === 0) {
-        alert('कृपया सिमुलेशन के लिए कम से कम एक स्ट्रैटेजी चुनें!');
+    function openLoginModal(mode) {
+      if (mode === 'demo') {
+        loginAsGuest();
         return;
       }
-
-      alert(`⚡ Demo Orders Executed! Simulated trades for ${selectedCount} strategies are now live in the Sandbox Engine.`);
-      recalculateSandboxTotals();
+      document.getElementById('login-modal').classList.remove('hidden');
     }
 
-    // ==========================================
-    // SANDBOX POSITIONS FILTER & SQUARE-OFF LOGIC
-    // ==========================================
-    let currentSbStatusFilter = 'ALL';
-
-    function filterSandboxTradesByStatus(status, btn) {
-      currentSbStatusFilter = status;
-      document.querySelectorAll('.sb-status-filter-btn').forEach(b => {
-        b.classList.remove('bg-[#3b5bfd]', 'text-white', 'shadow-xs');
-        b.classList.add('bg-white', 'text-slate-600');
-      });
-      btn.classList.add('bg-[#3b5bfd]', 'text-white', 'shadow-xs');
-      btn.classList.remove('bg-white', 'text-slate-600');
-      applySandboxFilters();
+    function closeLoginModal() {
+      document.getElementById('login-modal').classList.add('hidden');
     }
 
-    function applySandboxFilters() {
-      const strat = document.getElementById('sb-strategy-filter').value;
-      const rows = document.querySelectorAll('#sandbox-trades-tbody tr');
-      rows.forEach(row => {
-        const rowStatus = row.getAttribute('data-status');
-        const rowStrat = row.getAttribute('data-strategy');
-        const statusMatch = (currentSbStatusFilter === 'ALL' || rowStatus === currentSbStatusFilter);
-        const stratMatch = (strat === 'ALL' || rowStrat === strat);
-        if (statusMatch && stratMatch) {
-          row.style.display = '';
-        } else {
-          row.style.display = 'none';
-        }
-      });
+    function loginAsGuest() {
+      localStorage.setItem('strike_smart_user', JSON.stringify({
+        name: 'Demo Trader',
+        role: 'Pro Algo Member',
+        mode: 'paper',
+        loginTime: new Date().toISOString()
+      }));
+      window.location.href = 'dashboard.html';
     }
 
-    function updateSandboxFilterCounts() {
-      const rows = document.querySelectorAll('#sandbox-trades-tbody tr');
-      let all = rows.length;
-      let active = 0;
-      let closed = 0;
-      rows.forEach(r => {
-        const st = r.getAttribute('data-status');
-        if (st === 'RUNNING' || st === 'ACTIVE') active++;
-        if (st === 'CLOSED') closed++;
-      });
-      const elAll = document.getElementById('sb-count-all');
-      if (elAll) elAll.innerText = all;
-      const elRun = document.getElementById('sb-count-running');
-      if (elRun) elRun.innerText = active;
-      const elCls = document.getElementById('sb-count-closed');
-      if (elCls) elCls.innerText = closed;
+    function handleFormLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value || 'trader@strikesmart.in';
+      localStorage.setItem('strike_smart_user', JSON.stringify({
+        name: email.split('@')[0],
+        email: email,
+        mode: 'live',
+        loginTime: new Date().toISOString()
+      }));
+      window.location.href = 'dashboard.html';
     }
 
-    function squareOffSandboxTrade(rowId) {
-      const row = document.getElementById(`sb-trade-row-${rowId}`);
-      if (row) {
-        row.setAttribute('data-status', 'CLOSED');
-        row.style.opacity = '0.75';
-        row.style.background = '#f8fafc';
-        
-        const badge = document.getElementById(`sb-status-badge-${rowId}`);
-        if (badge) {
-          badge.innerHTML = `<div class="inline-flex flex-col items-center"><span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-300">🏁 SQUARE OFF</span><span class="text-[9px] font-bold text-slate-500 mt-0.5">⚡ Manual Square Off</span></div>`;
-        }
-
-        const exitEl = document.getElementById(`sb-exit-${rowId}`);
-        const ltpEl = document.getElementById(`sb-ltp-${rowId}`);
-        if (exitEl && ltpEl) {
-          exitEl.innerText = ltpEl.innerText;
-          exitEl.className = 'py-3.5 px-3 text-right font-bold text-slate-700 whitespace-nowrap';
-        }
-
-        const actionBtn = document.getElementById(`sb-action-btn-${rowId}`);
-        if (actionBtn) {
-          actionBtn.innerText = 'Square Off ✓';
-          actionBtn.disabled = true;
-          actionBtn.className = 'px-2.5 py-1 bg-slate-100 text-slate-400 border border-slate-200 rounded-xl text-[10px] font-bold cursor-not-allowed';
-        }
-
-        updateSandboxFilterCounts();
-        applySandboxFilters();
-        alert(`✅ Position #${rowId} Squared-Off!`);
-      }
-    }
-
-    function squareOffAllSandboxTrades() {
-      if (confirm('🚨 Are you sure you want to square-off all demo positions in the Paper Trading Sandbox?')) {
-        for (let i = 1; i <= 3; i++) {
-          squareOffSandboxTrade(i.toString());
-        }
-        alert('✅ All sandbox demo positions successfully squared-off.');
-      }
-    }
-
-    let currentVirtualBalance = 200000;
-    function addSandboxVirtualFunds(amount = 200000) {
-      currentVirtualBalance += amount;
-      const sbEl = document.getElementById('sandbox-funds-display');
-      if (sbEl) sbEl.innerText = `₹${currentVirtualBalance.toLocaleString('en-IN')}`;
-      const sideEl = document.getElementById('sidebar-fund-value');
-      if (sideEl && tradingMode === 'paper') sideEl.innerText = `₹${currentVirtualBalance.toLocaleString('en-IN')}`;
-      const portVal = document.getElementById('metric-p-value');
-      if (portVal && tradingMode === 'paper') {
-        const total = currentVirtualBalance + 48650;
-        portVal.innerText = `₹${total.toLocaleString('en-IN')}`;
-      }
-      alert(`🎉 ₹${amount.toLocaleString('en-IN')} added! Current Paper Balance: ₹${currentVirtualBalance.toLocaleString('en-IN')}`);
-    }
-
-    // Real-Time Simulation Price Ticker (updates LTP subtly every 3 seconds)
-    setInterval(() => {
-      const ltp1 = document.getElementById('sb-ltp-1');
-      if (ltp1) {
-        const delta = (Math.random() * 2 - 1).toFixed(2);
-        const newLtp = (parseFloat(ltp1.innerText.replace('₹', '')) + parseFloat(delta)).toFixed(2);
-        ltp1.innerText = `₹${newLtp}`;
-      }
-    }, 3500);
-
-    // Initial calculation on page load
+    // Auto-check if already logged in
     window.addEventListener('DOMContentLoaded', () => {
-      calcActiveCardDeductions('algo-1');
-      calcActiveCardDeductions('algo-2');
-      calcActiveCardDeductions('algo-3');
-      recalculateSandboxTotals();
-    });
-
-    // Auth modal controls
-    function openAuthModal() {
-      document.getElementById('auth-modal').classList.remove('hidden');
-    }
-
-    function closeAuthModal() {
-      document.getElementById('auth-modal').classList.add('hidden');
-    }
-
-    function handleAuthBackdropClick(e) {
-      if (e.target.id === 'auth-modal') closeAuthModal();
-    }
-
-    function setAuthMethod(method) {
-      const tabGoogle = document.getElementById('auth-tab-google');
-      const tabMobile = document.getElementById('auth-tab-mobile');
-      const viewGoogle = document.getElementById('auth-google-view');
-      const viewMobile = document.getElementById('auth-mobile-view');
-
-      if (method === 'google') {
-        tabGoogle.classList.add('bg-white', 'text-slate-900', 'shadow');
-        tabGoogle.classList.remove('text-slate-500');
-        tabMobile.classList.remove('bg-white', 'text-slate-900', 'shadow');
-        tabMobile.classList.add('text-slate-500');
-        viewGoogle.classList.remove('hidden');
-        viewMobile.classList.add('hidden');
-      } else {
-        tabMobile.classList.add('bg-white', 'text-slate-900', 'shadow');
-        tabMobile.classList.remove('text-slate-500');
-        tabGoogle.classList.remove('bg-white', 'text-slate-900', 'shadow');
-        tabGoogle.classList.add('text-slate-500');
-        viewMobile.classList.remove('hidden');
-        viewGoogle.classList.add('hidden');
-      }
-    }
-
-    function loginWithGoogle() {
-      const text = document.getElementById('google-btn-text');
-      text.innerText = 'Connecting Google Account...';
-      setTimeout(() => {
-        text.innerText = 'Continue with Google (1-Click)';
-        const nameEl = document.getElementById('user-name-display');
-        if (nameEl) nameEl.innerText = 'Deepak Sharma';
-        const userSub = document.getElementById('user-subtext');
-        if (userSub) userSub.innerHTML = 'Logged in as: <strong class="text-slate-800">Deepak Sharma</strong> (deepakmishra313001@gmail.com)';
-        closeAuthModal();
-        alert('🎉 Google Sign-In Successful! You are logged in as Deepak Sharma. Paper Trading Sandbox is active with ₹2,00,000 virtual balance.');
-      }, 600);
-    }
-
-    function sendMobileOtp() {
-      const num = document.getElementById('mobile-number-input').value;
-      if (num.length !== 10) {
-        alert('कृपया 10 अंकों का मोबाइल नंबर दर्ज करें।');
-        return;
-      }
-      document.getElementById('mobile-input-step').classList.add('hidden');
-      document.getElementById('otp-input-step').classList.remove('hidden');
-    }
-
-    function resendOtp() {
-      alert('OTP पुनः भेजा गया। (डेमो के लिए 123456 का उपयोग करें)');
-    }
-
-    function verifyMobileOtp() {
-      const nameEl = document.getElementById('user-name-display');
-      if (nameEl) nameEl.innerText = 'Trader (+91 ' + document.getElementById('mobile-number-input').value + ')';
-      closeAuthModal();
-      alert('✅ Mobile OTP Verified! Welcome to AlgoDeck Dashboard.');
-    }
-
-    // Connect modal controls
-    function openConnectModal() {
-      document.getElementById('connect-modal').classList.remove('hidden');
-      resetWizard();
-    }
-
-    function closeConnectModal() {
-      document.getElementById('connect-modal').classList.add('hidden');
-    }
-
-    function handleConnectBackdropClick(e) {
-      if (e.target.id === 'connect-modal') closeConnectModal();
-    }
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        closeConnectModal();
-        closeAuthModal();
-        closeBrokerageModal();
+      const user = localStorage.getItem('strike_smart_user');
+      if (user) {
+        // Can optionally provide a quick button
       }
     });
-
-    function setConnectMethod(method) {
-      const btnQr = document.getElementById('btn-method-qr');
-      const btnToken = document.getElementById('btn-method-token');
-      const viewQr = document.getElementById('method-qr');
-      const viewToken = document.getElementById('method-token');
-
-      if (method === 'qr') {
-        btnQr.classList.add('bg-white', 'text-slate-900', 'shadow');
-        btnQr.classList.remove('text-slate-500');
-        btnToken.classList.remove('bg-white', 'text-slate-900', 'shadow');
-        btnToken.classList.add('text-slate-500');
-        viewQr.classList.remove('hidden');
-        viewToken.classList.add('hidden');
-      } else {
-        btnToken.classList.add('bg-white', 'text-slate-900', 'shadow');
-        btnToken.classList.remove('text-slate-500');
-        btnQr.classList.remove('bg-white', 'text-slate-900', 'shadow');
-        btnQr.classList.add('text-slate-500');
-        viewToken.classList.remove('hidden');
-        viewQr.classList.add('hidden');
-      }
-    }
-
-    function resetWizard() {
-      document.getElementById('step-1-content').classList.remove('hidden');
-      document.getElementById('step-2-content').classList.add('hidden');
-      document.getElementById('prog-line-1').classList.remove('bg-emerald-500');
-      document.getElementById('step-badge-2').classList.remove('bg-emerald-600', 'text-white');
-      document.getElementById('step-badge-2').classList.add('bg-slate-100', 'text-slate-500');
-    }
-
-    function simulateSuccessfulConnect() {
-      document.getElementById('step-1-content').classList.add('hidden');
-      document.getElementById('step-2-content').classList.remove('hidden');
-      document.getElementById('prog-line-1').classList.add('bg-emerald-500');
-      document.getElementById('step-badge-2').classList.remove('bg-slate-100', 'text-slate-500');
-      document.getElementById('step-badge-2').classList.add('bg-emerald-600', 'text-white');
-    }
-
-    let currentTradingMode = 'paper';
-    let currentLiveDhanBalance = 0; // 0 or 10000
-
-    function setLiveDhanBalance(bal) {
-      currentLiveDhanBalance = bal;
-      const btn0 = document.getElementById('btn-bal-0');
-      const btn10k = document.getElementById('btn-bal-10k');
-      if (btn0 && btn10k) {
-        if (bal === 0) {
-          btn0.className = 'px-2 py-0.5 rounded-lg text-[10px] font-black bg-emerald-600 text-white shadow-xs';
-          btn10k.className = 'px-2 py-0.5 rounded-lg text-[10px] font-bold text-slate-600 hover:bg-slate-100';
-        } else {
-          btn10k.className = 'px-2 py-0.5 rounded-lg text-[10px] font-black bg-emerald-600 text-white shadow-xs';
-          btn0.className = 'px-2 py-0.5 rounded-lg text-[10px] font-bold text-slate-600 hover:bg-slate-100';
-        }
-      }
-      updateDashboardData();
-    }
-
-    function finishConnect() {
-      closeConnectModal();
-      setTradingMode('live');
-      alert('🎉 Dhan Account Linked! Switching from Paper Sim to Live Dhan Execution.');
-    }
-
-    function setTradingMode(mode) {
-      currentTradingMode = mode;
-      const btnPaper = document.getElementById('btn-mode-paper');
-      const btnLive = document.getElementById('btn-mode-live');
-      const liveBalSwitcher = document.getElementById('live-bal-switcher');
-      const badge = document.getElementById('mode-badge');
-      const userSub = document.getElementById('user-subtext');
-      const sidebarIcon = document.getElementById('sidebar-broker-icon');
-      const sidebarName = document.getElementById('sidebar-broker-name');
-      const sidebarId = document.getElementById('sidebar-broker-id');
-      const sidebarFundLabel = document.getElementById('sidebar-fund-label');
-      const sidebarFundValue = document.getElementById('sidebar-fund-value');
-      const sidebarBrokerBadge = document.getElementById('sidebar-broker-status-badge');
-      const sidebarSwitchBrokerBtn = document.getElementById('sidebar-switch-broker-btn');
-
-      if (mode === 'paper') {
-        if (btnPaper) btnPaper.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-[#3b5bfd] text-white shadow';
-        if (btnLive) btnLive.className = 'px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 flex items-center gap-1';
-        if (liveBalSwitcher) {
-          liveBalSwitcher.classList.add('hidden');
-          liveBalSwitcher.classList.remove('flex');
-        }
-        if (badge) {
-          badge.className = 'inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-blue-50 text-[#3b5bfd] border border-blue-200 shadow-xs whitespace-nowrap';
-          badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-[#3b5bfd] animate-pulse"></span> Paper Trading Active';
-        }
-        if (userSub) userSub.innerHTML = 'Logged in as: <strong class="text-slate-800" id="user-name-display">Deepak Sharma</strong> (deepakmishra313001@gmail.com) • <span class="text-blue-600 font-bold">Paper Sim Environment</span>';
-        if (sidebarIcon) {
-          sidebarIcon.className = 'w-8 h-8 rounded-xl bg-blue-600 text-white font-black text-xs flex items-center justify-center shadow';
-          sidebarIcon.innerText = 'PAPER';
-        }
-        if (sidebarName) sidebarName.innerText = 'Paper Trading Sim';
-        if (sidebarId) sidebarId.innerText = 'Sandbox Mode';
-        if (sidebarFundLabel) sidebarFundLabel.innerText = 'Virtual Funds:';
-        if (sidebarFundValue) sidebarFundValue.innerText = '₹2,00,000';
-        if (sidebarBrokerBadge) {
-          sidebarBrokerBadge.className = 'inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200';
-          sidebarBrokerBadge.innerHTML = 'SIMULATED';
-        }
-        if (sidebarSwitchBrokerBtn) {
-          sidebarSwitchBrokerBtn.className = 'w-full py-1.5 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-[#3b5bfd] text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 shadow-xs';
-          sidebarSwitchBrokerBtn.innerHTML = '<span>🔗</span><span>Link Live Broker</span>';
-        }
-      } else {
-        if (btnLive) btnLive.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow';
-        if (btnPaper) btnPaper.className = 'px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100';
-        if (liveBalSwitcher) {
-          liveBalSwitcher.classList.remove('hidden');
-          liveBalSwitcher.classList.add('flex');
-        }
-        if (badge) {
-          badge.className = 'inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-xs whitespace-nowrap';
-          badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Dhan Live Execution';
-        }
-        if (userSub) userSub.innerHTML = 'Logged in as: <strong class="text-slate-800" id="user-name-display">Deepak Sharma</strong> • <span class="text-emerald-700 font-bold">DhanHQ Client: DH882941 (Live)</span>';
-        if (sidebarIcon) {
-          sidebarIcon.className = 'w-8 h-8 rounded-xl bg-emerald-600 text-white font-black text-xs flex items-center justify-center shadow';
-          sidebarIcon.innerText = 'DH';
-        }
-        if (sidebarName) sidebarName.innerText = 'DhanHQ API (Live)';
-        if (sidebarId) sidebarId.innerText = 'Client: DH882941';
-        if (sidebarFundLabel) sidebarFundLabel.innerText = 'Live Balance:';
-        if (sidebarFundValue) sidebarFundValue.innerText = currentLiveDhanBalance === 0 ? '₹0.00' : '₹10,000.00';
-        if (sidebarBrokerBadge) {
-          sidebarBrokerBadge.className = 'inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200';
-          sidebarBrokerBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> ACTIVE';
-        }
-        if (sidebarSwitchBrokerBtn) {
-          sidebarSwitchBrokerBtn.className = 'w-full py-1.5 px-3 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 shadow-xs';
-          sidebarSwitchBrokerBtn.innerHTML = '<span>⇄</span><span>Switch Broker</span>';
-        }
-      }
-
-      updateDashboardData();
-    }
-
-    function updateDashboardData() {
-      const cardMetricPortfolio = document.getElementById('card-metric-portfolio');
-      const metricPTitle = document.getElementById('metric-p-title');
-      const metricPBadge = document.getElementById('metric-p-badge');
-      const metricPVal = document.getElementById('metric-p-value');
-      const metricPSubFund = document.getElementById('metric-p-sub-fund');
-      const metricPSubGain = document.getElementById('metric-p-sub-gain');
-
-      const metricGrossTitle = document.getElementById('metric-gross-title');
-      const metricWinBadge = document.getElementById('metric-win-badge');
-      const metricGrossGain = document.getElementById('metric-gross-gain');
-      const metricGrossLoss = document.getElementById('metric-gross-loss');
-      const metricTradesCount = document.getElementById('metric-trades-count');
-      const metricTradesWins = document.getElementById('metric-trades-wins');
-
-      const metricTaxBadge = document.getElementById('metric-tax-badge');
-      const metricTaxVal = document.getElementById('metric-tax-value');
-      const metricTaxBroker = document.getElementById('metric-tax-broker');
-      const metricTaxStt = document.getElementById('metric-tax-stt');
-      const metricTaxGovt = document.getElementById('metric-tax-govt');
-
-      const metricNetBadge = document.getElementById('metric-net-badge');
-      const metricNetVal = document.getElementById('metric-net-value');
-      const metricNetFee = document.getElementById('metric-net-fee');
-      const metricNetRoi = document.getElementById('metric-net-roi');
-
-      const deployTotal = document.getElementById('deploy-total-text');
-      const deployBadge = document.getElementById('deploy-badge');
-      const deployCenterVal = document.getElementById('deploy-center-val');
-      const deployCenterLabel = document.getElementById('deploy-center-label');
-      const deployMarginVal = document.getElementById('deploy-margin-val');
-      const deployCashVal = document.getElementById('deploy-cash-val');
-      const deployCircleMargin = document.getElementById('deploy-circle-margin');
-      const deployCircleCash = document.getElementById('deploy-circle-cash');
-
-      const overviewAlgosTitle = document.getElementById('overview-algos-title');
-      const overviewAlgosDesc = document.getElementById('overview-algos-desc');
-      const algoItemSub1 = document.getElementById('algo-item-sub-1');
-      const algoItemBrok1 = document.getElementById('algo-item-brok-1');
-      const algoItemNet1 = document.getElementById('algo-item-net-1');
-
-      const algoItemSub2 = document.getElementById('algo-item-sub-2');
-      const algoItemBrok2 = document.getElementById('algo-item-brok-2');
-      const algoItemNet2 = document.getElementById('algo-item-net-2');
-
-      const rmsLimit = document.getElementById('rms-shield-limit');
-      const rmsBar = document.getElementById('rms-progress-bar');
-      const sidebarFundValue = document.getElementById('sidebar-fund-value');
-
-      if (currentTradingMode === 'paper') {
-        // PAPER SIM DATA
-        if (cardMetricPortfolio) cardMetricPortfolio.className = 'bg-[#3b5bfd] rounded-[28px] p-5 text-white shadow-xl shadow-blue-500/20 flex flex-col justify-between transition-colors';
-        if (metricPTitle) metricPTitle.innerText = 'Net Portfolio (Virtual)';
-        if (metricPBadge) {
-          metricPBadge.className = 'text-[11px] font-bold bg-[#10b981] text-white px-2.5 py-0.5 rounded-full font-sans';
-          metricPBadge.innerText = '+24.3% Growth';
-        }
-        if (metricPVal) metricPVal.innerText = '₹2,48,650';
-        if (metricPSubFund) metricPSubFund.innerText = 'Virtual Fund: ₹2.00L';
-        if (metricPSubGain) metricPSubGain.innerText = '+₹48,650 Net';
-
-        if (metricGrossTitle) metricGrossTitle.innerText = 'Gross Return';
-        if (metricWinBadge) {
-          metricWinBadge.className = 'text-[11px] font-bold bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full font-sans';
-          metricWinBadge.innerText = '69.4% Win Rate';
-        }
-        if (metricGrossGain) metricGrossGain.innerText = '+₹65,750';
-        if (metricGrossLoss) metricGrossLoss.innerText = '-₹14,800';
-        if (metricTradesCount) metricTradesCount.innerText = '36 Trades Taken';
-        if (metricTradesWins) metricTradesWins.innerText = '25 Wins';
-
-        if (metricTaxBadge) {
-          metricTaxBadge.className = 'text-[11px] font-bold bg-red-50 text-red-600 px-2.5 py-0.5 rounded-full font-sans';
-          metricTaxBadge.innerText = 'Brokerage & Taxes';
-        }
-        if (metricTaxVal) metricTaxVal.innerText = '-₹2,320';
-        if (metricTaxBroker) metricTaxBroker.innerText = 'Broker: ₹720';
-        if (metricTaxStt) metricTaxStt.innerText = 'Govt/STT: ₹1,600';
-        if (metricTaxGovt) metricTaxGovt.innerText = '';
-
-        if (metricNetBadge) {
-          metricNetBadge.className = 'text-[11px] font-bold bg-indigo-50 text-indigo-700 px-2.5 py-0.5 rounded-full font-sans';
-          metricNetBadge.innerText = 'Pure Take';
-        }
-        if (metricNetVal) metricNetVal.innerText = '+₹48,630';
-        if (metricNetFee) metricNetFee.innerText = 'Platform Fee: ₹7/mo';
-        if (metricNetRoi) metricNetRoi.innerText = 'ROI: +24.3%';
-
-        if (deployTotal) deployTotal.innerText = 'Total Portfolio: ₹2,48,650';
-        if (deployBadge) {
-          deployBadge.className = 'text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg';
-          deployBadge.innerText = 'Paper Sim';
-        }
-        if (deployCenterVal) deployCenterVal.innerText = '₹2.48L';
-        if (deployCenterLabel) deployCenterLabel.innerText = 'Sim Capital';
-        if (deployMarginVal) deployMarginVal.innerText = '₹1,50,000 (60%)';
-        if (deployCashVal) deployCashVal.innerText = '₹98,650 (40%)';
-        if (deployCircleMargin) deployCircleMargin.setAttribute('stroke-dashoffset', '75');
-        if (deployCircleCash) deployCircleCash.setAttribute('stroke-dashoffset', '55');
-
-        if (overviewAlgosTitle) overviewAlgosTitle.innerText = 'Your Active Algorithms (Paper Sim)';
-        if (overviewAlgosDesc) overviewAlgosDesc.innerText = 'Strategies actively deployed with ₹2,00,000 simulated balance';
-        if (algoItemSub1) algoItemSub1.innerText = 'Min Capital: ₹50,000 • 14 Trades';
-        if (algoItemBrok1) algoItemBrok1.innerText = '-₹560';
-        if (algoItemNet1) {
-          algoItemNet1.innerText = '+₹16,090';
-          algoItemNet1.className = 'font-bold text-emerald-600';
-        }
-        if (algoItemSub2) algoItemSub2.innerText = 'Min Capital: ₹1,50,000 • 16 Trades';
-        if (algoItemBrok2) algoItemBrok2.innerText = '-₹1,280';
-        if (algoItemNet2) {
-          algoItemNet2.innerText = '+₹25,620';
-          algoItemNet2.className = 'font-bold text-emerald-600';
-        }
-
-        if (rmsLimit) rmsLimit.innerText = '3.0% (₹6,000 Max SL)';
-        if (rmsBar) rmsBar.style.width = '0%';
-        if (sidebarFundValue) sidebarFundValue.innerText = '₹2,00,000';
-      } else {
-        // LIVE DHAN DATA (DYNAMIC: ₹0 OR ₹10,000 OR CUSTOM)
-        const isZero = currentLiveDhanBalance === 0;
-        if (cardMetricPortfolio) cardMetricPortfolio.className = 'bg-emerald-600 rounded-[28px] p-5 text-white shadow-xl shadow-emerald-500/20 flex flex-col justify-between transition-colors';
-        if (metricPTitle) metricPTitle.innerText = 'Live Dhan Portfolio';
-        if (metricPBadge) {
-          metricPBadge.className = isZero ? 'text-[11px] font-bold bg-amber-500 text-white px-2.5 py-0.5 rounded-full font-sans' : 'text-[11px] font-bold bg-white text-emerald-800 px-2.5 py-0.5 rounded-full font-sans';
-          metricPBadge.innerText = isZero ? 'Unfunded (₹0 Bal)' : 'Funded Live Capital';
-        }
-        if (metricPVal) metricPVal.innerText = isZero ? '₹0.00' : '₹10,000.00';
-        if (metricPSubFund) metricPSubFund.innerText = isZero ? 'Dhan Fund: ₹0.00' : 'Dhan Fund: ₹10,000.00';
-        if (metricPSubGain) metricPSubGain.innerText = '₹0.00 Net P&L';
-
-        if (metricGrossTitle) metricGrossTitle.innerText = 'Live Gross Return';
-        if (metricWinBadge) {
-          metricWinBadge.className = 'text-[11px] font-bold bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-full font-sans';
-          metricWinBadge.innerText = '0 Trades Today';
-        }
-        if (metricGrossGain) metricGrossGain.innerText = '₹0.00';
-        if (metricGrossLoss) metricGrossLoss.innerText = '₹0.00';
-        if (metricTradesCount) metricTradesCount.innerText = '0 Live Orders Executed';
-        if (metricTradesWins) metricTradesWins.innerText = '0 Wins';
-
-        if (metricTaxBadge) {
-          metricTaxBadge.className = 'text-[11px] font-bold bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-full font-sans';
-          metricTaxBadge.innerText = 'Zero Charges';
-        }
-        if (metricTaxVal) metricTaxVal.innerText = '₹0.00';
-        if (metricTaxBroker) metricTaxBroker.innerText = 'Broker: ₹0.00';
-        if (metricTaxStt) metricTaxStt.innerText = 'STT: ₹0.00';
-        if (metricTaxGovt) metricTaxGovt.innerText = 'Govt: ₹0.00';
-
-        if (metricNetBadge) {
-          metricNetBadge.className = 'text-[11px] font-bold bg-emerald-50 text-emerald-800 px-2.5 py-0.5 rounded-full font-sans';
-          metricNetBadge.innerText = 'Live P&L';
-        }
-        if (metricNetVal) metricNetVal.innerText = '₹0.00';
-        if (metricNetFee) metricNetFee.innerText = 'Platform Fee: ₹7/mo';
-        if (metricNetRoi) metricNetRoi.innerText = 'Live ROI: 0.00%';
-
-        if (deployTotal) deployTotal.innerText = isZero ? 'Total Portfolio: ₹0.00' : 'Total Portfolio: ₹10,000.00';
-        if (deployBadge) {
-          deployBadge.className = 'text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg';
-          deployBadge.innerText = 'Dhan Live';
-        }
-        if (deployCenterVal) deployCenterVal.innerText = isZero ? '₹0.00' : '₹10.0K';
-        if (deployCenterLabel) deployCenterLabel.innerText = 'Live Funds';
-        if (deployMarginVal) deployMarginVal.innerText = '₹0.00 (0%)';
-        if (deployCashVal) deployCashVal.innerText = isZero ? '₹0.00 (0%)' : '₹10,000 (100%)';
-        if (deployCircleMargin) deployCircleMargin.setAttribute('stroke-dashoffset', '264');
-        if (deployCircleCash) deployCircleCash.setAttribute('stroke-dashoffset', isZero ? '188' : '0');
-
-        if (overviewAlgosTitle) overviewAlgosTitle.innerText = 'Your Active Algorithms (Live Dhan)';
-        if (overviewAlgosDesc) overviewAlgosDesc.innerText = isZero 
-          ? 'Standby Mode: Add live margin to Dhan account to enable auto-execution.' 
-          : 'Live Ready: Waiting for strategy webhook signal trigger in market hours.';
-        if (algoItemSub1) algoItemSub1.innerText = isZero ? 'Standby • 0 Live Orders' : 'Live Armed • 0 Orders';
-        if (algoItemBrok1) algoItemBrok1.innerText = '₹0.00';
-        if (algoItemNet1) {
-          algoItemNet1.innerText = '₹0.00';
-          algoItemNet1.className = 'font-bold text-slate-500';
-        }
-        if (algoItemSub2) algoItemSub2.innerText = isZero ? 'Standby • 0 Live Orders' : 'Live Armed • 0 Orders';
-        if (algoItemBrok2) algoItemBrok2.innerText = '₹0.00';
-        if (algoItemNet2) {
-          algoItemNet2.innerText = '₹0.00';
-          algoItemNet2.className = 'font-bold text-slate-500';
-        }
-
-        if (rmsLimit) rmsLimit.innerText = isZero ? '3.0% (₹0.00 Limit)' : '3.0% (₹300 Max SL)';
-        if (rmsBar) rmsBar.style.width = '0%';
-        if (sidebarFundValue) sidebarFundValue.innerText = isZero ? '₹0.00' : '₹10,000.00';
-      }
-    }
-
-    function toggleCardAlgo(cardId, btn) {
-      const card = document.getElementById(cardId);
-      const dot = btn.querySelector('div');
-      const isGreen = btn.classList.contains('bg-emerald-500');
-
-      if (isGreen) {
-        // Switch to OFF (RED, knob slides to LEFT)
-        btn.classList.remove('bg-emerald-500', 'shadow-emerald-500/30', 'bg-[#3b5bfd]');
-        btn.classList.add('bg-red-500', 'shadow-md', 'shadow-red-500/30');
-        dot.className = 'bg-white w-4 h-4 rounded-full shadow-md transform translate-x-0 transition-transform duration-300';
-        if (card) {
-          card.classList.remove('border-emerald-200', 'bg-emerald-50/20');
-          card.classList.add('border-rose-200', 'bg-rose-50/10', 'opacity-70');
-        }
-        alert('🔴 Strategy Deactivated (OFF): No new orders will be placed.');
-      } else {
-        // Switch to ON (EMERALD GREEN, knob slides to RIGHT)
-        btn.classList.remove('bg-red-500', 'bg-slate-300', 'shadow-red-500/30');
-        btn.classList.add('bg-emerald-500', 'shadow-md', 'shadow-emerald-500/30');
-        dot.className = 'bg-white w-4 h-4 rounded-full shadow-md transform translate-x-6 transition-transform duration-300';
-        if (card) {
-          card.classList.add('border-emerald-200', 'bg-emerald-50/20');
-          card.classList.remove('border-rose-200', 'bg-rose-50/10', 'border-slate-200', 'opacity-70', 'opacity-60');
-        }
-        alert('🟢 Strategy Activated (ON): Now trading live on incoming signals.');
-      }
-    }
-
-    function toggleTableRowAlgo(btn) {
-      const dot = btn.querySelector('div');
-      const isGreen = btn.classList.contains('bg-emerald-500');
-      const row = btn.closest('tr');
-      const statusBadge = row ? row.querySelectorAll('td')[4] : null;
-
-      if (isGreen) {
-        btn.classList.remove('bg-emerald-500', 'shadow-emerald-500/30');
-        btn.classList.add('bg-red-500', 'shadow-md', 'shadow-red-500/30');
-        dot.className = 'bg-white w-4 h-4 rounded-full shadow-md transform translate-x-0 transition-transform duration-300';
-        if (row) row.classList.add('opacity-75');
-        if (statusBadge) {
-          statusBadge.innerHTML = '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">🔴 OFF</span>';
-        }
-      } else {
-        btn.classList.remove('bg-red-500', 'shadow-red-500/30');
-        btn.classList.add('bg-emerald-500', 'shadow-md', 'shadow-emerald-500/30');
-        dot.className = 'bg-white w-4 h-4 rounded-full shadow-md transform translate-x-6 transition-transform duration-300';
-        if (row) row.classList.remove('opacity-75');
-        if (statusBadge) {
-          statusBadge.innerHTML = '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">🟢 ACTIVE</span>';
-        }
-      }
-    }
-
-    function filterLedger(type) {
-      const btn7 = document.getElementById('btn-7days');
-      const btnFull = document.getElementById('btn-fullmonth');
-      if (type === '7days') {
-        btn7.classList.add('bg-white', 'text-slate-900', 'shadow');
-        btn7.classList.remove('text-slate-500');
-        btnFull.classList.remove('bg-white', 'text-slate-900', 'shadow');
-        btnFull.classList.add('text-slate-500');
-      } else {
-        btnFull.classList.add('bg-white', 'text-slate-900', 'shadow');
-        btnFull.classList.remove('text-slate-500');
-        btn7.classList.remove('bg-white', 'text-slate-900', 'shadow');
-        btn7.classList.add('text-slate-500');
-        alert('Showing full month trade history (all 36 trades for November).');
-      }
-    }
-
-    function emergencySquareOff() {
-      if (confirm('🚨 EMERGENCY KILL-SWITCH: Are you sure you want to stop all active algos and square-off all positions?')) {
-        const btn = document.getElementById('kill-btn');
-        btn.classList.remove('bg-red-500', 'hover:bg-red-600');
-        btn.classList.add('bg-red-100', 'text-red-600', 'cursor-not-allowed');
-        btn.innerHTML = '<span>🚨</span><span>All Algos Stopped</span>';
-        btn.disabled = true;
-        alert('✅ Emergency kill-switch executed. All positions squared-off.');
-      }
-    }
   </script>
 </body>
 </html>
