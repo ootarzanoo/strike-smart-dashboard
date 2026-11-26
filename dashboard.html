@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AlgoDeck - User Trading Dashboard</title>
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <!-- Google Cloud Identity & Firebase Web SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="auth.js"></script>
   <style>
     body {
       background-color: #EBF0F6;
@@ -2280,12 +2285,32 @@
       }
     }, 3500);
 
-    // Initial calculation on page load
+    // Initial calculation and user session on page load
     window.addEventListener('DOMContentLoaded', () => {
       calcActiveCardDeductions('algo-1');
       calcActiveCardDeductions('algo-2');
       calcActiveCardDeductions('algo-3');
       recalculateSandboxTotals();
+
+      // Dynamically load Google Cloud user session
+      try {
+        const rawUser = localStorage.getItem('strike_smart_user');
+        if (rawUser) {
+          const u = JSON.parse(rawUser);
+          const sidebarName = document.getElementById('sidebar-user-name');
+          const nameEl = document.getElementById('user-name-display');
+          const userSub = document.getElementById('user-subtext');
+          if (sidebarName && u.name) sidebarName.innerText = u.name;
+          if (nameEl && u.name) nameEl.innerText = u.name;
+          if (userSub) {
+            const ident = u.email || u.phone || u.identifier || 'Verified';
+            const prov = u.provider || 'Google Cloud Verified';
+            userSub.innerHTML = `Logged in as: <strong class="text-slate-800">${u.name}</strong> (${ident}) • <span class="text-emerald-600 font-bold">${prov}</span>`;
+          }
+        }
+      } catch (err) {
+        console.warn('Session load err:', err);
+      }
     });
 
     // Auth modal controls
@@ -2333,8 +2358,20 @@
         if (nameEl) nameEl.innerText = 'Deepak Sharma';
         const userSub = document.getElementById('user-subtext');
         if (userSub) userSub.innerHTML = 'Logged in as: <strong class="text-slate-800">Deepak Sharma</strong> (deepakmishra313001@gmail.com)';
+        
+        const userData = {
+          name: 'Deepak Sharma',
+          email: 'deepakmishra313001@gmail.com',
+          identifier: 'deepakmishra313001@gmail.com',
+          provider: 'Google Cloud (Gmail One-Tap)',
+          role: 'Pro Algo Member',
+          loginTime: new Date().toISOString()
+        };
+        localStorage.setItem('strike_smart_user', JSON.stringify(userData));
+        if (typeof notifyTelegramLogin === 'function') notifyTelegramLogin(userData);
+
         closeAuthModal();
-        alert('🎉 Google Sign-In Successful! You are logged in as Deepak Sharma. Paper Trading Sandbox is active with ₹2,00,000 virtual balance.');
+        alert('🎉 Google Sign-In Successful! Logged in as Deepak Sharma. Paper Trading Sandbox is active with ₹2,00,000 virtual balance.');
       }, 600);
     }
 
@@ -2353,10 +2390,23 @@
     }
 
     function verifyMobileOtp() {
+      const num = document.getElementById('mobile-number-input').value;
       const nameEl = document.getElementById('user-name-display');
-      if (nameEl) nameEl.innerText = 'Trader (+91 ' + document.getElementById('mobile-number-input').value + ')';
+      if (nameEl) nameEl.innerText = 'Trader (+91 ' + num + ')';
+      
+      const userData = {
+        name: 'Trader (+91 ' + num + ')',
+        phone: '+91 ' + num,
+        identifier: '+91 ' + num,
+        provider: 'Google Cloud Mobile OTP',
+        role: 'Verified Algo Member',
+        loginTime: new Date().toISOString()
+      };
+      localStorage.setItem('strike_smart_user', JSON.stringify(userData));
+      if (typeof notifyTelegramLogin === 'function') notifyTelegramLogin(userData);
+
       closeAuthModal();
-      alert('✅ Mobile OTP Verified! Welcome to AlgoDeck Dashboard.');
+      alert('✅ Mobile OTP Verified! Welcome to Strike Smart Dashboard.');
     }
 
     // Connect modal controls
